@@ -1,7 +1,10 @@
 import { Howl } from 'howler';
 import farmBGM1 from '../assets/bgm/bgm_1.mp3';
 import farmBGM2 from '../assets/bgm/bgm_2.mp3';
-import chopEffect from '../assets/soundEffect/chopping.wav';
+import choppingEffect from '../assets/soundEffect/chopping.wav';
+import miningEffect from '../assets/soundEffect/mining.wav';
+import wateringEffect from '../assets/soundEffect/watering.wav';
+import diggingEffect from '../assets/soundEffect/digging.wav';
 
 export class SoundManager {
   private static bgms: Howl[];
@@ -15,9 +18,10 @@ export class SoundManager {
     ];
 
     this.effects = {
-      chop: new Howl({ src: [chopEffect], volume: 1 }),
-      // mine: new Howl({ src: ['assets/mine.mp3'], volume: 1 }),
-      // water: new Howl({ src: ['assets/water.mp3'], volume: 1 }),
+      chop: new Howl({ src: [choppingEffect], volume: 1 }),
+      mine: new Howl({ src: [miningEffect], volume: 1 }),
+      water: new Howl({ src: [wateringEffect], volume: 1 }),
+      dig: new Howl({ src: [diggingEffect], volume: 1 }),
     };
     this.playNextBGM();
   }
@@ -31,7 +35,7 @@ export class SoundManager {
     });
   }
 
-  public static playEffect(name: 'chop' | 'mine' | 'water'): void {
+  public static playEffect(name: 'chop' | 'mine' | 'water' | 'dig'): void {
     this.effects[name]?.play();
   }
 }

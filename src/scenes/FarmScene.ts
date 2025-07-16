@@ -4,10 +4,14 @@ import { Text } from '@pixi/text';
 import { Player } from '../objects/Player';
 import { House } from '../objects/House';
 import { TileType } from '../types/Tile';
+import { Market } from '../objects/Market';
 
 export class FarmScene {
   public player: Player;
+  public onOpenMarket?: () => void;
+
   private house: House;
+  private market: Market;
   private container: Container;
   private tileSize: number = 32;
   private cols: number = 25;
@@ -23,6 +27,7 @@ export class FarmScene {
   private woodText: Text;
   private stoneText: Text;
   private waterText: Text;
+  private goldText: Text;
 
   constructor(stage: Container) {
     this.container = new Container();
@@ -40,6 +45,11 @@ export class FarmScene {
     this.house.occupyMap(this.mapData);
     this.house.draw(this.container);
 
+    // 마켓 관련.
+    this.market = new Market(14, 1, 3, 2);
+    this.market.occupyMap(this.mapData);
+    this.market.draw(this.container);
+
     // 토스트 알람 관련.
     this.toastText = new Text('', { fontSize: 24, fill: 0xff0000 });
     this.toastText.anchor.set(0.5, 0);
@@ -49,7 +59,7 @@ export class FarmScene {
 
     // 인벤토리 관련.
     this.inventoryContainer = new Container();
-    this.inventoryContainer.position.set(750, 20); // 우측 상단
+    this.inventoryContainer.position.set(730, 20); // 우측 상단
     stage.addChild(this.inventoryContainer);
 
     this.woodText = new Text('', { fontSize: 14, fill: 0x000000 });
@@ -63,6 +73,10 @@ export class FarmScene {
     this.waterText = new Text('', { fontSize: 14, fill: 0x000000 });
     this.waterText.position.set(0, 60);
     this.inventoryContainer.addChild(this.waterText);
+
+    this.goldText = new Text('', { fontSize: 14, fill: 0x000000 });
+    this.goldText.position.set(0, 90);
+    this.inventoryContainer.addChild(this.goldText);
 
     this.updateInventoryInfo(this.player);
   }
@@ -186,5 +200,6 @@ export class FarmScene {
     this.woodText.text = `🌲 ${player.inventory.wood}`;
     this.stoneText.text = `🪨 ${player.inventory.stone}`;
     this.waterText.text = `💧 ${player.inventory.water}`;
+    this.goldText.text = `💰 ${player.inventory.gold}`;
   }
 }

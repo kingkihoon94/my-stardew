@@ -5,7 +5,9 @@ import { UiPanel } from '../scenes/UiPanel';
 import { Graphics } from '@pixi/graphics';
 import { Text } from '@pixi/text';
 import { FederatedPointerEvent } from '@pixi/events';
+
 import { SoundManager } from './SoundManager';
+import { MarketPopup } from '../scenes/MarketPopup';
 
 export class App {
   public app: Application;
@@ -14,6 +16,7 @@ export class App {
   private day: number = 1;
   private dayText: Text;
   private isPopupActive: boolean = false;
+  private marketPopup: MarketPopup | null = null;
 
   constructor() {
     SoundManager.init();
@@ -29,6 +32,10 @@ export class App {
     this.app.stage.addChild(farmContainer);
 
     this.farmScene = new FarmScene(farmContainer);
+
+    this.farmScene.onOpenMarket = () => {
+      this.showMarketPopup();
+    };
 
     this.uiPanel = new UiPanel(this.farmScene.player);
     this.app.stage.addChild(this.uiPanel);
@@ -102,5 +109,21 @@ export class App {
     popup.addChild(noBtn);
 
     this.app.stage.addChild(popup);
+  }
+
+  private showMarketPopup(): void {
+    if (this.marketPopup) return;
+    this.isPopupActive = true;
+    this.farmScene.player.setIsPopupActive(true);
+    this.marketPopup = new MarketPopup(this.farmScene.player, () => this.closeMarketPopup());
+    this.app.stage.addChild(this.marketPopup);
+  }
+
+  private closeMarketPopup(): void {
+    if (!this.marketPopup) return;
+    this.app.stage.removeChild(this.marketPopup);
+    this.marketPopup = null;
+    this.isPopupActive = false;
+    this.farmScene.player.setIsPopupActive(false);
   }
 }
