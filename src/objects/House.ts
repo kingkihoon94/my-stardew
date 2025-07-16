@@ -1,5 +1,6 @@
 import { Container } from '@pixi/display';
 import { Graphics } from '@pixi/graphics';
+import { TileType } from '../types/Tile';
 
 export class House {
   public x: number;
@@ -18,7 +19,7 @@ export class House {
   public occupyMap(mapData: number[][]): void {
     for (let row = this.y; row < this.y + this.height; row++) {
       for (let col = this.x; col < this.x + this.width; col++) {
-        mapData[row][col] = 4; // 4: 집
+        mapData[row][col] = TileType.House;
       }
     }
   }

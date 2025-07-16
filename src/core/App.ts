@@ -5,6 +5,7 @@ import { UiPanel } from '../scenes/UiPanel';
 import { Graphics } from '@pixi/graphics';
 import { Text } from '@pixi/text';
 import { FederatedPointerEvent } from '@pixi/events';
+import { SoundManager } from './SoundManager';
 
 export class App {
   public app: Application;
@@ -12,8 +13,11 @@ export class App {
   private uiPanel: UiPanel;
   private day: number = 1;
   private dayText: Text;
+  private isPopupActive: boolean = false;
 
   constructor() {
+    SoundManager.init();
+
     this.app = new Application({
       width: 1000,
       height: 608,
@@ -38,6 +42,7 @@ export class App {
 
     this.app.ticker.add(() => {
       this.uiPanel.updatePlayerInfo(this.farmScene.player);
+      this.uiPanel.updateInventoryInfo(this.farmScene.player);
     });
 
     this.app.stage.eventMode = 'static';
@@ -45,6 +50,8 @@ export class App {
     this.app.stage.cursor = 'auto';
 
     window.addEventListener('keydown', (e) => {
+      if (this.isPopupActive) return;
+
       if (e.key === 'Enter') {
         this.showSleepPopup();
       }
@@ -52,6 +59,8 @@ export class App {
   }
 
   private showSleepPopup(): void {
+    this.isPopupActive = true;
+    this.farmScene.player.setIsPopupActive(true);
     const popup = new Container();
     popup.position.set(300, 200);
 
@@ -75,6 +84,8 @@ export class App {
       this.dayText.text = `Day ${this.day}`;
       this.farmScene.player.resetPosition();
       this.app.stage.removeChild(popup);
+      this.isPopupActive = false;
+      this.farmScene.player.setIsPopupActive(false);
     });
     popup.addChild(yesBtn);
 
@@ -84,6 +95,8 @@ export class App {
     noBtn.cursor = 'pointer';
     noBtn.on('pointerdown', (e: FederatedPointerEvent) => {
       this.app.stage.removeChild(popup);
+      this.isPopupActive = false;
+      this.farmScene.player.setIsPopupActive(false);
     });
     popup.addChild(noBtn);
 

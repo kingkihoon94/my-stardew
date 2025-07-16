@@ -5,5 +5,6 @@ export enum TileType {
   Watered = 3,      // 물 준 땅 (작물 심기 가능)
   Tree = 4,         // 나무
   Water = 5,        // 물 (고정된 직사각형 영역)
-  SoilWithStone = 6 // 일반 흙 땅에 돌 있는거
+  SoilWithStone = 6, // 일반 흙 땅에 돌 있는거
+  House = 7 // 집
 }

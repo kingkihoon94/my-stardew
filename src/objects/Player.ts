@@ -2,20 +2,31 @@ import { Graphics } from '@pixi/graphics';
 import { TileType } from '../types/Tile';
 import { FarmScene } from '../scenes/FarmScene';
 import { Ticker } from '@pixi/core';
+import { SoundManager } from '../core/SoundManager';
+import { CommonSkill, SpecializedSkill } from '../types/Skill';
+
 
 const DEFAULT_SIZE = 32;
-const STAMINA_TREE = 3;
-const STAMINA_ROCK = 4;
+
+const STAMINA_WOOD = 10;
+const STAMINA_STONE = 10;
 const STAMINA_WATER = 5;
+const STAMINA_TILLING = 5;
+const STAMINA_WATERING = 5;
+
+const EXP_COMMON = 5;
+const EXP_WOOD = 10;
+const EXP_STONE = 10;
+const EXP_TILLING = 6;
+const EXP_WATERING = 6;
 
 export class Player {
   public sprite: Graphics;
   public hp: number = 100;
-  public stamina: number = 50;
-  public level: number = 1;
+  public stamina: number = 100;
 
   public maxHp: number = 100;
-  public maxStamina: number = 50;
+  public maxStamina: number = 100;
 
   public inventory: Record<string, number> = {
     wood: 0,
@@ -23,8 +34,38 @@ export class Player {
     water: 0,
   };
 
-  private exp: number = 0;
-  private expToLevelUp: number = 100;
+  public skills: {
+    common: CommonSkill;
+    wood: SpecializedSkill;
+    stone: SpecializedSkill;
+    farm: SpecializedSkill;
+  } = {
+      common: {
+        level: 1,
+        exp: 0,
+        expToLevelUp: 100,
+        maxHpBonus: 10,
+        maxStaminaBonus: 5,
+      },
+      wood: {
+        level: 1,
+        exp: 0,
+        expToLevelUp: 100,
+        staminaReducePerLevel: 1,
+      },
+      stone: {
+        level: 1,
+        exp: 0,
+        expToLevelUp: 100,
+        staminaReducePerLevel: 1,
+      },
+      farm: {
+        level: 1,
+        exp: 0,
+        expToLevelUp: 100,
+        staminaReducePerLevel: 1,
+      },
+    };
 
   private tileSize: number = 32;
   private speed: number = DEFAULT_SIZE;
@@ -34,6 +75,8 @@ export class Player {
   private exhaustedTicker: Ticker | null = null;
   private isExhausted: boolean = false;
 
+  private isPopupActive: boolean = false;
+
 
   constructor(mapData: number[][], private farmScene: FarmScene) {
     this.mapData = mapData;
@@ -41,11 +84,16 @@ export class Player {
     this.resetPosition();
     this.drawPlayerFace(this.lastDirection);
 
-    window.addEventListener('keydown', (e) => this.handleKey(e));
+    window.addEventListener('keydown', (e) => {
+      this.handleKey(e);
+    });
   }
 
-  public gainExp(amount: number): void {
-    this.exp += amount;
+  public gainExp(key: 'wood' | 'stone' | 'farm', amount: number): void {
+    const skill = this.skills[key];
+    skill.exp += amount;
+
+    this.skills.common.exp += EXP_COMMON; // 모든 특정 행위는 공통 경험치를 올린다.
   }
 
   public sleep(): void {
@@ -55,13 +103,19 @@ export class Player {
   }
 
   private levelUpCheck(): void {
-    while (this.exp >= this.expToLevelUp) {
-      this.exp -= this.expToLevelUp;
-      this.level += 1;
-      this.expToLevelUp += 20;
-      this.maxHp += 10;
-      this.maxStamina += 5;
-    }
+    Object.entries(this.skills).forEach(([key, skill]) => {
+      while (skill.exp >= skill.expToLevelUp) {
+        skill.exp -= skill.expToLevelUp;
+        skill.level++;
+        skill.expToLevelUp += 20;
+
+        if (key === 'common') {
+          const commonSkill = skill as CommonSkill;
+          this.maxHp += commonSkill.maxHpBonus;
+          this.maxStamina += commonSkill.maxStaminaBonus;
+        }
+      }
+    });
   }
 
   public resetPosition(): void {
@@ -76,7 +130,13 @@ export class Player {
     }
   }
 
+  public setIsPopupActive(active: boolean): void {
+    this.isPopupActive = active;
+  }
+
   private handleKey(e: KeyboardEvent): void {
+    if (this.isPopupActive) return;
+
     if (this.hp <= 0 || this.stamina <= 0) {
       if (!this.isExhausted) {
         this.isExhausted = true;
@@ -139,28 +199,57 @@ export class Player {
     const targetTile = this.mapData[targetRow][targetCol];
 
     if (targetTile === TileType.Tree) {
-      if (this.stamina < STAMINA_TREE) return;
-      this.stamina -= STAMINA_TREE;
+      const stamina = Math.max(1, STAMINA_WOOD - ((this.skills.wood.level - 1) * this.skills.wood.staminaReducePerLevel));
+      if (this.stamina < stamina) return;
+      this.stamina -= stamina;
       this.mapData[targetRow][targetCol] = TileType.Soil;
-      this.gainExp(10); // 나무는 경험치 10
+      this.gainExp('wood', EXP_WOOD);
+      this.inventory.wood++;
       this.farmScene.updateTile(targetRow, targetCol);
-      console.log('나무 아이템 획득');
+      SoundManager.playEffect('chop');
     }
 
     if (targetTile === TileType.SoilWithStone) {
-      if (this.stamina < STAMINA_ROCK) return;
-      this.stamina -= STAMINA_ROCK;
+      const stamina = Math.max(1, STAMINA_STONE - ((this.skills.stone.level - 1) * this.skills.stone.staminaReducePerLevel));
+      if (this.stamina < stamina) return;
+      this.stamina -= stamina;
       this.mapData[targetRow][targetCol] = TileType.Soil;
-      this.gainExp(20); // 바위는 경험치 20
+      this.gainExp('stone', EXP_STONE);
+      this.inventory.stone++;
       this.farmScene.updateTile(targetRow, targetCol);
-      console.log('돌 아이템 획득');
+      SoundManager.playEffect('chop');
     }
 
     if (targetTile === TileType.Water) {
       if (this.stamina < STAMINA_WATER) return;
       this.stamina -= STAMINA_WATER;
-      console.log('물 획득');
+      this.inventory.water++;
     }
+
+    if (targetTile === TileType.Soil) {
+      const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
+      const stamina = Math.max(1, STAMINA_TILLING - reduceStamina);
+      if (this.stamina < stamina) return;
+      this.stamina -= stamina;
+      this.mapData[targetRow][targetCol] = TileType.Tilled;
+      this.gainExp('farm', EXP_TILLING);
+      this.farmScene.updateTile(targetRow, targetCol);
+      SoundManager.playEffect('chop');
+    }
+
+    if (targetTile === TileType.Tilled) {
+      if (this.inventory.water === 0) return;
+      const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
+      const stamina = Math.max(1, STAMINA_WATERING - reduceStamina);
+      if (this.stamina < stamina) return;
+      this.stamina -= stamina;
+      this.inventory.water--;
+      this.mapData[targetRow][targetCol] = TileType.Watered;
+      this.gainExp('farm', EXP_WATERING);
+      this.farmScene.updateTile(targetRow, targetCol);
+      SoundManager.playEffect('chop');
+    }
+
   }
 
   public showExhaustedEffect(): void {
