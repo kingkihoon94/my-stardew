@@ -42,7 +42,8 @@ export class App {
 
     this.app.ticker.add(() => {
       this.uiPanel.updatePlayerInfo(this.farmScene.player);
-      this.uiPanel.updateInventoryInfo(this.farmScene.player);
+      this.farmScene.updateInventoryInfo(this.farmScene.player);
+      this.farmScene.toastUpdate();
     });
 
     this.app.stage.eventMode = 'static';

@@ -1,5 +1,6 @@
 import { Container } from '@pixi/display';
 import { Graphics } from '@pixi/graphics';
+import { Text } from '@pixi/text';
 import { Player } from '../objects/Player';
 import { House } from '../objects/House';
 import { TileType } from '../types/Tile';
@@ -14,6 +15,15 @@ export class FarmScene {
   private fixedMapRows: number = 5;
   private mapData: number[][] = [];
 
+  private toastQueue: string[] = [];
+  private toastText: Text;
+  private toastTimer: number = 0;
+
+  private inventoryContainer: Container;
+  private woodText: Text;
+  private stoneText: Text;
+  private waterText: Text;
+
   constructor(stage: Container) {
     this.container = new Container();
     stage.addChild(this.container);
@@ -21,12 +31,40 @@ export class FarmScene {
     this.generateMap();
     this.drawTileMap();
 
+    // 플레이어 관련.
     this.player = new Player(this.mapData, this);
     this.container.addChild(this.player.sprite);
 
+    // 하우스 관련.
     this.house = new House(7, 1, 5, 2);
     this.house.occupyMap(this.mapData);
     this.house.draw(this.container);
+
+    // 토스트 알람 관련.
+    this.toastText = new Text('', { fontSize: 24, fill: 0xff0000 });
+    this.toastText.anchor.set(0.5, 0);
+    this.toastText.position.set(450, 20); // 화면 중앙 상단 (1000px 기준)
+    this.toastText.visible = false;
+    stage.addChild(this.toastText);
+
+    // 인벤토리 관련.
+    this.inventoryContainer = new Container();
+    this.inventoryContainer.position.set(750, 20); // 우측 상단
+    stage.addChild(this.inventoryContainer);
+
+    this.woodText = new Text('', { fontSize: 14, fill: 0x000000 });
+    this.woodText.position.set(0, 0);
+    this.inventoryContainer.addChild(this.woodText);
+
+    this.stoneText = new Text('', { fontSize: 14, fill: 0x000000 });
+    this.stoneText.position.set(0, 30);
+    this.inventoryContainer.addChild(this.stoneText);
+
+    this.waterText = new Text('', { fontSize: 14, fill: 0x000000 });
+    this.waterText.position.set(0, 60);
+    this.inventoryContainer.addChild(this.waterText);
+
+    this.updateInventoryInfo(this.player);
   }
 
   private generateMap(): void {
@@ -114,5 +152,39 @@ export class FarmScene {
     graphics.beginFill(fillColor);
     graphics.drawRect(0, 0, this.tileSize, this.tileSize);
     graphics.endFill();
+  }
+
+  public queueToast(message: string): void {
+    this.toastQueue.push(message);
+    if (!this.toastText.visible) {
+      this.showNextToast();
+    }
+  }
+
+  /** 다음 토스트 알람 보여주기 */
+  private showNextToast(): void {
+    if (this.toastQueue.length === 0) return;
+    const message = this.toastQueue.shift()!;
+    this.toastText.text = message;
+    this.toastText.visible = true;
+    this.toastTimer = 90;
+  }
+
+  /** 토스트 알람 업데이트 */
+  public toastUpdate(): void {
+    if (this.toastTimer > 0) {
+      this.toastTimer--;
+      if (this.toastTimer <= 0) {
+        this.toastText.visible = false;
+        this.showNextToast();
+      }
+    }
+  }
+
+  /** 인벤토리 상황 업데이트 */
+  public updateInventoryInfo(player: Player): void {
+    this.woodText.text = `🌲 ${player.inventory.wood}`;
+    this.stoneText.text = `🪨 ${player.inventory.stone}`;
+    this.waterText.text = `💧 ${player.inventory.water}`;
   }
 }

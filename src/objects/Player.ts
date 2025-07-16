@@ -34,6 +34,13 @@ export class Player {
     water: 0,
   };
 
+  private skillNames: Record<string, string> = {
+    common: '캐릭터',
+    wood: '벌목',
+    stone: '채광',
+    farm: '농사'
+  };
+
   public skills: {
     common: CommonSkill;
     wood: SpecializedSkill;
@@ -105,6 +112,9 @@ export class Player {
   private levelUpCheck(): void {
     Object.entries(this.skills).forEach(([key, skill]) => {
       while (skill.exp >= skill.expToLevelUp) {
+        const displayName = this.skillNames[key];
+        this.farmScene.queueToast(`${displayName} Level Up!`);
+
         skill.exp -= skill.expToLevelUp;
         skill.level++;
         skill.expToLevelUp += 20;
@@ -120,7 +130,7 @@ export class Player {
 
   public resetPosition(): void {
     this.sprite.x = DEFAULT_SIZE * 9;
-    this.sprite.y = DEFAULT_SIZE * 4;
+    this.sprite.y = DEFAULT_SIZE * 3;
     this.lastDirection = 'down';
     this.drawPlayerFace(this.lastDirection);
 
