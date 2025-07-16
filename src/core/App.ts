@@ -1,10 +1,10 @@
 import { Application } from '@pixi/app';
 import { Container } from '@pixi/display';
-import { FarmScene } from '../scenes/FarmScene';
-import { UiPanel } from '../scenes/UiPanel';
 import { Graphics } from '@pixi/graphics';
 import { Text } from '@pixi/text';
-import { FederatedPointerEvent } from '@pixi/events';
+
+import { FarmScene } from '../scenes/FarmScene';
+import { UiPanel } from '../scenes/UiPanel';
 
 import { SoundManager } from './SoundManager';
 import { MarketPopup } from '../scenes/MarketPopup';

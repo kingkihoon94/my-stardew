@@ -70,7 +70,7 @@ export class MarketPopup extends Container {
       const gold = 10 * (level + 1);
 
       const text = new Text(
-        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  |  나무 ${wood}  돌 ${stone}  골드 ${gold}`,
+        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  | 필요 자원 : 🌲 ${wood}  🪨 ${stone}  💰 ${gold}`,
         { fontSize: 16, fill: 0x000000 }
       );
       text.position.set(10, 10);

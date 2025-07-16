@@ -59,7 +59,7 @@ export class FarmScene {
 
     // 인벤토리 관련.
     this.inventoryContainer = new Container();
-    this.inventoryContainer.position.set(730, 20); // 우측 상단
+    this.inventoryContainer.position.set(650, 20); // 우측 상단
     stage.addChild(this.inventoryContainer);
 
     this.woodText = new Text('', { fontSize: 14, fill: 0x000000 });
@@ -67,15 +67,15 @@ export class FarmScene {
     this.inventoryContainer.addChild(this.woodText);
 
     this.stoneText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.stoneText.position.set(0, 30);
+    this.stoneText.position.set(80, 0);
     this.inventoryContainer.addChild(this.stoneText);
 
     this.waterText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.waterText.position.set(0, 60);
+    this.waterText.position.set(0, 30);
     this.inventoryContainer.addChild(this.waterText);
 
     this.goldText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.goldText.position.set(0, 90);
+    this.goldText.position.set(80, 30);
     this.inventoryContainer.addChild(this.goldText);
 
     this.updateInventoryInfo(this.player);
