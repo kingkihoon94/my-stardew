@@ -4,21 +4,7 @@ import { FarmScene } from '../scenes/FarmScene';
 import { Ticker } from '@pixi/core';
 import { SoundManager } from '../core/SoundManager';
 import { CommonSkill, SpecializedSkill } from '../types/Skill';
-
-
-const DEFAULT_SIZE = 32;
-
-const STAMINA_WOOD = 10;
-const STAMINA_STONE = 10;
-const STAMINA_WATER = 5;
-const STAMINA_DIGGING = 5;
-const STAMINA_WATERING = 5;
-
-const EXP_COMMON = 5;
-const EXP_WOOD = 10;
-const EXP_STONE = 10;
-const EXP_DIGGING = 6;
-const EXP_WATERING = 6;
+import { EXP_COMMON, EXP_DIGGING, EXP_STONE, EXP_WATERING, EXP_WOOD, PLAYER_SIZE, STAMINA_DIGGING, STAMINA_STONE, STAMINA_WATER, STAMINA_WATERING, STAMINA_WOOD, TILE_SIZE } from '../constants';
 
 export class Player {
   public sprite: Graphics;
@@ -86,8 +72,8 @@ export class Player {
       },
     };
 
-  private tileSize: number = 32;
-  private speed: number = DEFAULT_SIZE;
+  private tileSize: number = TILE_SIZE;
+  private speed: number = PLAYER_SIZE;
   private mapData: number[][];
   private lastDirection: 'up' | 'down' | 'left' | 'right' = 'down';
 
@@ -145,8 +131,8 @@ export class Player {
   }
 
   public resetPosition(): void {
-    this.sprite.x = DEFAULT_SIZE * 9;
-    this.sprite.y = DEFAULT_SIZE * 3;
+    this.sprite.x = TILE_SIZE * 9;
+    this.sprite.y = TILE_SIZE * 3;
     this.lastDirection = 'down';
     this.drawPlayerFace(this.lastDirection);
 

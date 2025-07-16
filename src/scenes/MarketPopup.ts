@@ -2,9 +2,7 @@ import { Container } from '@pixi/display';
 import { Text } from '@pixi/text';
 import { Graphics } from '@pixi/graphics';
 import { Player } from '../objects/Player';
-
-const COST_WOOD = 5;
-const COST_STONE = 5;
+import { COST_STONE, COST_WOOD } from '../constants';
 
 const toolNames: Record<string, string> = {
   hoe: '괭이',
