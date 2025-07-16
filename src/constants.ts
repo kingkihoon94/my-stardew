@@ -16,6 +16,7 @@ export const EXP_STONE = 10;
 export const EXP_DIGGING = 6;
 export const EXP_WATERING = 6;
 
-// 마켓에서 판매 비용.
+// 마켓에서 구매 및 판매 비용.
+export const COST_SEED = 10;
 export const COST_WOOD = 5;
 export const COST_STONE = 5;

@@ -26,6 +26,11 @@ export class Player {
     stone: 0,
     water: 0,
     gold: 0,
+
+    springSeed: 0,
+    summerSeed: 0,
+    autumnSeed: 0,
+    winterSeed: 0,
   };
 
   public tools = {
@@ -33,10 +38,6 @@ export class Player {
     axe: 0,
     pickaxe: 0,
     wateringCan: 0,
-    springSeed: 0,
-    summerSeed: 0,
-    autumnSeed: 0,
-    winterSeed: 0,
   };
 
   public skills: {

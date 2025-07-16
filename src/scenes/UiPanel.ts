@@ -9,6 +9,8 @@ export class UiPanel extends Container {
   private hpText: Text;
   private staminaText: Text;
 
+  private seedText: Text;
+
   private hoeLevelText: Text;
   private axeLevelText: Text;
   private pickaxeLevelText: Text;
@@ -48,6 +50,10 @@ export class UiPanel extends Container {
     this.staminaText.position.set(20, 115);
     this.characterInfoContainer.addChild(this.staminaText);
 
+    this.seedText = new Text('', { fontSize: 14, fill: 0x000000 });
+    this.seedText.position.set(20, 145);
+    this.characterInfoContainer.addChild(this.seedText);
+
     this.hoeLevelText = new Text('', { fontSize: 14, fill: 0x000000 });
     this.hoeLevelText.position.set(20, 360);
     this.characterInfoContainer.addChild(this.hoeLevelText);
@@ -86,6 +92,8 @@ export class UiPanel extends Container {
     const skills = player.skills;
     this.hpText.text = `체력: ${player.hp}`;
     this.staminaText.text = `기력: ${player.stamina}`;
+
+    this.seedText.text = `🌱 씨앗 갯수: ${player.inventory.springSeed}`;
 
     this.hoeLevelText.text = `괭이 Lv.${player.tools.hoe}`;
     this.axeLevelText.text = `도끼 Lv.${player.tools.axe}`;
