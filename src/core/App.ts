@@ -86,7 +86,7 @@ export class App {
     yesBtn.position.set(100, 120);
     yesBtn.eventMode = 'static';
     yesBtn.cursor = 'pointer';
-    yesBtn.on('pointerdown', (e: FederatedPointerEvent) => {
+    yesBtn.on('pointerdown', () => {
       this.farmScene.player.sleep();
       this.day += 1;
       this.dayText.text = `Day ${this.day}`;
@@ -101,7 +101,7 @@ export class App {
     noBtn.position.set(250, 120);
     noBtn.eventMode = 'static';
     noBtn.cursor = 'pointer';
-    noBtn.on('pointerdown', (e: FederatedPointerEvent) => {
+    noBtn.on('pointerdown', () => {
       this.app.stage.removeChild(popup);
       this.isPopupActive = false;
       this.farmScene.player.setIsPopupActive(false);
