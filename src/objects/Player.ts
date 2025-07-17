@@ -1,4 +1,5 @@
 import { Container } from '@pixi/display';
+import { Graphics } from '@pixi/graphics';
 import { Ticker } from '@pixi/core';
 import { Sprite } from '@pixi/sprite';
 
@@ -9,11 +10,7 @@ import { TileType } from '../types/Tile';
 import { CommonSkill, SpecializedSkill } from '../types/Skill';
 import { ObjectMap } from '../types/Object';
 
-import playerUp from '../assets/texture/baby_down.png';
-import playerDown from '../assets/texture/baby_down.png';
-import playerLeft from '../assets/texture/baby_down.png';
-import playerRight from '../assets/texture/baby_down.png';
-
+import babyImage from '../assets/texture/baby.png';
 
 import {
   EXP_COMMON, EXP_DIGGING, EXP_STONE, EXP_WATERING, EXP_WOOD,
@@ -23,8 +20,8 @@ import {
 
 export class Player {
   public sprite: Container;
-
-  private faceSprites: Record<'up' | 'down' | 'left' | 'right', Sprite>;
+  private babySprite: Sprite;
+  private arrow: Graphics;
   private lastDirection: 'up' | 'down' | 'left' | 'right' = 'down';
 
   public hp: number = 100;
@@ -107,33 +104,26 @@ export class Player {
 
   private isPopupActive: boolean = false;
 
-
   constructor(tileMap: number[][], objectMap: ObjectMap, private farmScene: FarmScene) {
     this.tileMap = tileMap;
     this.objectMap = objectMap;
     this.sprite = new Container();
 
-    this.faceSprites = {
-      up: Sprite.from(playerUp),
-      down: Sprite.from(playerDown),
-      left: Sprite.from(playerLeft),
-      right: Sprite.from(playerRight),
-    };
+    this.babySprite = Sprite.from(babyImage);
+    this.babySprite.width = TILE_SIZE;
+    this.babySprite.height = TILE_SIZE;
+    this.sprite.addChild(this.babySprite);
 
-    Object.values(this.faceSprites).forEach((sprite) => {
-      sprite.width = TILE_SIZE;
-      sprite.height = TILE_SIZE;
-      sprite.visible = false;
-      this.sprite.addChild(sprite);
-    });
+    this.arrow = new Graphics();
+    this.sprite.addChild(this.arrow);
 
-    this.faceSprites[this.lastDirection].visible = true;
     this.resetPosition();
 
     window.addEventListener('keydown', (e) => {
       this.handleKey(e);
     });
   }
+
 
   public gainGold(amount: number): void {
     this.gold += amount;
@@ -170,6 +160,10 @@ export class Player {
         }
       }
     });
+  }
+
+  private updatePlayerFace(direction: 'up' | 'down' | 'left' | 'right'): void {
+    this.updateDirectionArrow(direction);
   }
 
   public resetPosition(): void {
@@ -397,11 +391,22 @@ export class Player {
     }
   }
 
-  private updatePlayerFace(direction: 'up' | 'down' | 'left' | 'right'): void {
-    Object.values(this.faceSprites).forEach((sprite) => {
-      sprite.visible = false;
-    });
-    this.faceSprites[direction].visible = true;
+  private updateDirectionArrow(direction: 'up' | 'down' | 'left' | 'right'): void {
+    this.arrow.clear();
+    this.arrow.beginFill(0xce0018, 0.5);
+
+    const size = 5;
+    const offset = 40;
+    let x = TILE_SIZE / 2;
+    let y = TILE_SIZE / 2;
+
+    if (direction === 'up') y += TILE_SIZE / 2 - offset;
+    if (direction === 'down') y -= TILE_SIZE / 2 - offset;
+    if (direction === 'left') x += TILE_SIZE / 2 - offset;
+    if (direction === 'right') x -= TILE_SIZE / 2 - offset;
+
+    this.arrow.drawCircle(x, y, size);
+    this.arrow.endFill();
   }
 
   private canMove(nextX: number, nextY: number): boolean {
