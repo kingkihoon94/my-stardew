@@ -125,6 +125,7 @@ export class Player {
       while (skill.exp >= skill.expToLevelUp) {
         const displayName = this.skillNames[key];
         this.farmScene.queueToast(`${displayName} Level Up!`);
+        SoundManager.playEffect('levelUp');
 
         skill.exp -= skill.expToLevelUp;
         skill.level++;
@@ -161,6 +162,7 @@ export class Player {
     if (this.hp <= 0 || this.stamina <= 0) {
       if (!this.isExhausted) {
         this.isExhausted = true;
+        SoundManager.playEffect('exhausted');
         this.showExhaustedEffect();
       }
       return;
@@ -176,33 +178,33 @@ export class Player {
       this.lastDirection = 'up';
       if (this.canMove(nextX, nextY - this.speed)) {
         this.sprite.y -= this.speed;
-        this.stamina -= 1;
       }
     }
     if (e.key === 'ArrowDown') {
       this.lastDirection = 'down';
       if (this.canMove(nextX, nextY + this.speed)) {
         this.sprite.y += this.speed;
-        this.stamina -= 1;
       }
     }
     if (e.key === 'ArrowLeft') {
       this.lastDirection = 'left';
       if (this.canMove(nextX - this.speed, nextY)) {
         this.sprite.x -= this.speed;
-        this.stamina -= 1;
       }
     }
     if (e.key === 'ArrowRight') {
       this.lastDirection = 'right';
       if (this.canMove(nextX + this.speed, nextY)) {
         this.sprite.x += this.speed;
-        this.stamina -= 1;
       }
     }
 
     if (e.key === ' ') {
       this.performAction();
+    }
+
+    if (e.key === '1') {
+      this.performSeed();
     }
 
     this.drawPlayerFace(this.lastDirection);
@@ -223,9 +225,11 @@ export class Player {
     // Tree (벌목)
     if (targetObject?.type === 'Tree') {
       const stamina = Math.max(1, STAMINA_WOOD - ((this.skills.wood.level - 1) * this.skills.wood.staminaReducePerLevel));
-      if (this.stamina < stamina) return;
+      if (this.stamina < stamina) {
+        SoundManager.playEffect('error');
+        return;
+      }
       this.stamina -= stamina;
-      this.objectMap[targetRow][targetCol] = null;
       this.gainExp('wood', EXP_WOOD);
       this.inventory.wood++;
       this.farmScene.updateObject(targetRow, targetCol, null);
@@ -236,9 +240,11 @@ export class Player {
     // Stone (채광)
     if (targetObject?.type === 'Stone') {
       const stamina = Math.max(1, STAMINA_STONE - ((this.skills.stone.level - 1) * this.skills.stone.staminaReducePerLevel));
-      if (this.stamina < stamina) return;
+      if (this.stamina < stamina) {
+        SoundManager.playEffect('error');
+        return;
+      }
       this.stamina -= stamina;
-      this.objectMap[targetRow][targetCol] = null;
       this.gainExp('stone', EXP_STONE);
       this.inventory.stone++;
       this.farmScene.updateObject(targetRow, targetCol, null);
@@ -254,7 +260,10 @@ export class Player {
 
     // Water (물 뜨기)
     if (targetTile === TileType.Water) {
-      if (this.stamina < STAMINA_WATER) return;
+      if (this.stamina < STAMINA_WATER) {
+        SoundManager.playEffect('error');
+        return;
+      }
       this.stamina -= STAMINA_WATER;
       this.inventory.water++;
       SoundManager.playEffect('water');
@@ -265,7 +274,10 @@ export class Player {
     if (targetTile === TileType.Soil) {
       const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
       const stamina = Math.max(1, STAMINA_DIGGING - reduceStamina);
-      if (this.stamina < stamina) return;
+      if (this.stamina < stamina) {
+        SoundManager.playEffect('error');
+        return;
+      }
       this.stamina -= stamina;
       this.tileMap[targetRow][targetCol] = TileType.Tilled;
       this.gainExp('farm', EXP_DIGGING);
@@ -276,10 +288,16 @@ export class Player {
 
     // Tilled (물 주기)
     if (targetTile === TileType.Tilled) {
-      if (this.inventory.water === 0) return;
+      if (this.inventory.water === 0) {
+        SoundManager.playEffect('error');
+        return;
+      }
       const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
       const stamina = Math.max(1, STAMINA_WATERING - reduceStamina);
-      if (this.stamina < stamina) return;
+      if (this.stamina < stamina) {
+        SoundManager.playEffect('error');
+        return;
+      }
       this.stamina -= stamina;
       this.inventory.water--;
       this.tileMap[targetRow][targetCol] = TileType.Watered;
@@ -287,6 +305,41 @@ export class Player {
       this.farmScene.updateTile(targetRow, targetCol);
       SoundManager.playEffect('water');
       return;
+    }
+  }
+
+  /** 씨앗 뿌리기. */
+  private performSeed(): void {
+    if (this.inventory.springSeed <= 0) {
+      SoundManager.playEffect('error');
+      return;
+    }
+
+    const offsetX = this.lastDirection === 'left' ? -this.speed :
+      this.lastDirection === 'right' ? this.speed : 0;
+    const offsetY = this.lastDirection === 'up' ? -this.speed :
+      this.lastDirection === 'down' ? this.speed : 0;
+
+    const targetCol = (this.sprite.x + offsetX) / this.tileSize;
+    const targetRow = (this.sprite.y + offsetY) / this.tileSize;
+
+    if (targetRow < 0 || targetRow >= this.tileMap.length ||
+      targetCol < 0 || targetCol >= this.tileMap[0].length) {
+      return;
+    }
+
+    if (!!this.objectMap[targetRow][targetCol]) {
+      SoundManager.playEffect('error');
+      return;
+    }
+
+    // 현재 타일이 경작 가능한 상태인지 확인 (예: 2 = 경작됨, 3 = 물 줌 가능)
+    if (this.tileMap[targetRow][targetCol] === TileType.Tilled || this.tileMap[targetRow][targetCol] === TileType.Watered) {
+      this.inventory.springSeed--;
+      this.farmScene.updateObject(targetRow, targetCol, 'SpringSeed');
+      SoundManager.playEffect('seed');
+    } else {
+      SoundManager.playEffect('error');
     }
   }
 
@@ -380,12 +433,8 @@ export class Player {
       return false;
     }
 
-    // (2) 씨앗이 아닌 다른 오브젝트가 있으면 못감
-    if (object && !['SpringSeed', 'SummerSeed', 'AutumnSeed', 'WinterSeed'].includes(object.type)) {
-      return false;
-    }
-
-    return true;
+    // (2) 다른 오브젝트가 있으면 못감
+    return !object;
   }
 }
 

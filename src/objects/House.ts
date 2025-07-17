@@ -1,13 +1,16 @@
 import { Container } from '@pixi/display';
-import { Graphics } from '@pixi/graphics';
+import { Sprite } from '@pixi/sprite';
+
 import { ObjectMap } from '../types/Object';
+
+import houseImage from '../assets/texture/house.png';
+import { TILE_SIZE } from '../constants';
 
 export class House {
   public x: number;
   public y: number;
   public width: number;
   public height: number;
-  private tileSize: number = 32;
 
   constructor(x: number, y: number, width: number, height: number) {
     this.x = x;
@@ -19,26 +22,19 @@ export class House {
   public occupyMap(objectMap: ObjectMap): void {
     for (let row = this.y; row < this.y + this.height; row++) {
       for (let col = this.x; col < this.x + this.width; col++) {
-        objectMap[row][col] = { type: 'House' };
+        objectMap[row][col] = { type: 'House', sprite: null };
       }
     }
   }
 
   public draw(container: Container): void {
-    for (let row = this.y; row < this.y + this.height; row++) {
-      for (let col = this.x; col < this.x + this.width; col++) {
-        const xPos = col * this.tileSize;
-        const yPos = row * this.tileSize;
+    const sprite = Sprite.from(houseImage);
+    sprite.x = this.x * TILE_SIZE;
+    sprite.y = this.y * TILE_SIZE;
+    sprite.width = this.width * TILE_SIZE;
+    sprite.height = this.height * TILE_SIZE + 40;
+    sprite.anchor.set(0, 0.3); // 원하는 앵커 조정.
 
-        const g: Graphics = new Graphics();
-        g.lineStyle(1, 0x000000, 0.2);
-        g.beginFill(0xffd700); // 노란색 집
-        g.drawRect(0, 0, this.tileSize, this.tileSize);
-        g.endFill();
-        g.x = xPos;
-        g.y = yPos;
-        container.addChild(g);
-      }
-    }
+    container.addChild(sprite);
   }
 }

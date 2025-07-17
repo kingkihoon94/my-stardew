@@ -1,3 +1,5 @@
+import { Sprite } from "@pixi/sprite";
+
 export type ObjectType =
   | 'House'
   | 'Market'
@@ -11,6 +13,7 @@ export type ObjectType =
 
 export interface ObjectCell {
   type: ObjectType;
+  sprite: Sprite | null;
   data?: any;
 }
 

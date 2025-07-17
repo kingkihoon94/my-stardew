@@ -49,7 +49,7 @@ export class App {
 
     this.app.ticker.add(() => {
       this.uiPanel.updatePlayerInfo(this.farmScene.player);
-      this.farmScene.updateInventoryInfo(this.farmScene.player);
+      this.farmScene.updateInventoryInfo();
       this.farmScene.toastUpdate();
     });
 
@@ -88,6 +88,7 @@ export class App {
     yesBtn.cursor = 'pointer';
     yesBtn.on('pointerdown', () => {
       this.farmScene.player.sleep();
+      this.farmScene.nextDaySimulate();
       this.day += 1;
       this.dayText.text = `Day ${this.day}`;
       this.farmScene.player.resetPosition();

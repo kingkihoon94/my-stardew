@@ -1,7 +1,11 @@
 import { Container } from '@pixi/display';
 import { Text } from '@pixi/text';
 import { Graphics } from '@pixi/graphics';
+
+import { SoundManager } from '../core/SoundManager';
+
 import { Player } from '../objects/Player';
+
 import { COST_SEED, COST_STONE, COST_WOOD } from '../constants';
 
 const toolNames: Record<string, string> = {
@@ -69,13 +73,41 @@ export class MarketPopup extends Container {
       const stone = 5 * (level + 1);
       const gold = 10 * (level + 1);
 
-      const text = new Text(
-        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  | 필요 자원 : 🌲 ${wood}  🪨 ${stone}  💰 ${gold}`,
+      const hasEnoughWood = player.inventory.wood >= wood;
+      const hasEnoughStone = player.inventory.stone >= stone;
+      const hasEnoughGold = player.inventory.gold >= gold;
+
+      const textContainer = new Container();
+
+      const baseText = new Text(
+        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  | 필요 자원 : `,
         { fontSize: 16, fill: 0x000000 }
       );
-      text.position.set(10, 10);
-      buttonContainer.addChild(text);
+      textContainer.addChild(baseText);
 
+      const woodText = new Text(
+        `🌲 ${wood}`,
+        { fontSize: 16, fill: hasEnoughWood ? 0x000000 : 0xff0000 }
+      );
+      woodText.x = baseText.width;
+      textContainer.addChild(woodText);
+
+      const stoneText = new Text(
+        `  🪨 ${stone}`,
+        { fontSize: 16, fill: hasEnoughStone ? 0x000000 : 0xff0000 }
+      );
+      stoneText.x = baseText.width + woodText.width;
+      textContainer.addChild(stoneText);
+
+      const goldText = new Text(
+        `  💰 ${gold}`,
+        { fontSize: 16, fill: hasEnoughGold ? 0x000000 : 0xff0000 }
+      );
+      goldText.x = baseText.width + woodText.width + stoneText.width;
+      textContainer.addChild(goldText);
+      textContainer.position.set(10, 10);
+
+      buttonContainer.addChild(textContainer);
       this.addChild(buttonContainer);
     });
 
@@ -148,6 +180,7 @@ export class MarketPopup extends Container {
       if (player.inventory.gold >= COST_SEED) {
         player.inventory.gold -= COST_SEED;
         player.inventory.springSeed++;;
+        SoundManager.playEffect('success');
         this.refresh();
       }
     }
@@ -158,12 +191,14 @@ export class MarketPopup extends Container {
       if (player.inventory.wood > 0) {
         player.inventory.gold += COST_WOOD;
         player.inventory.wood--;
+        SoundManager.playEffect('getCoin');
         this.refresh();
       }
     } else if (item === 'stone') {
       if (player.inventory.stone > 0) {
         player.inventory.gold += COST_STONE;
         player.inventory.stone--;
+        SoundManager.playEffect('getCoin');
         this.refresh();
       }
     }
@@ -181,6 +216,7 @@ export class MarketPopup extends Container {
       player.inventory.stone -= required;
       player.inventory.gold -= required * 2;
       player.tools[tool]++;
+      SoundManager.playEffect('levelUp');
       this.refresh();
     }
   }
