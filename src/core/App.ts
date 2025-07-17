@@ -41,6 +41,7 @@ export class App {
     this.app.stage.addChild(this.uiPanel);
 
     this.dayText = new Text(`Day ${this.day}`, {
+      fontFamily: 'Galmuri11',
       fontSize: 20,
       fill: 0x000000,
     });
@@ -48,9 +49,7 @@ export class App {
     this.app.stage.addChild(this.dayText);
 
     this.app.ticker.add(() => {
-      this.uiPanel.updatePlayerInfo(this.farmScene.player);
-      this.farmScene.updateInventoryInfo();
-      this.farmScene.toastUpdate();
+      this.uiPanel.update(this.farmScene.player);
     });
 
     this.app.stage.eventMode = 'static';
@@ -62,6 +61,17 @@ export class App {
 
       if (e.key === 'Enter') {
         this.showSleepPopup();
+      }
+
+      if (e.key === 'Tab') {
+        e.preventDefault();
+        if (this.uiPanel.visibleTab === 'character') {
+          this.uiPanel.toggle('inventory');
+        } else if (this.uiPanel.visibleTab === 'inventory') {
+          this.uiPanel.toggle('setting');
+        } else {
+          this.uiPanel.toggle('character');
+        }
       }
     });
   }
@@ -78,11 +88,11 @@ export class App {
     bg.endFill();
     popup.addChild(bg);
 
-    const text = new Text('잠을 자시겠습니까?', { fontSize: 20, fill: 0x000000 });
+    const text = new Text('잠을 자시겠습니까?', { fontFamily: 'Galmuri11', fontSize: 20, fill: 0x000000 });
     text.position.set(100, 50);
     popup.addChild(text);
 
-    const yesBtn = new Text('YES', { fontSize: 20, fill: 0x000000 });
+    const yesBtn = new Text('YES', { fontFamily: 'Galmuri11', fontSize: 20, fill: 0x000000 });
     yesBtn.position.set(100, 120);
     yesBtn.eventMode = 'static';
     yesBtn.cursor = 'pointer';
@@ -98,7 +108,7 @@ export class App {
     });
     popup.addChild(yesBtn);
 
-    const noBtn = new Text('NO', { fontSize: 20, fill: 0x000000 });
+    const noBtn = new Text('NO', { fontFamily: 'Galmuri11', fontSize: 20, fill: 0x000000 });
     noBtn.position.set(250, 120);
     noBtn.eventMode = 'static';
     noBtn.cursor = 'pointer';

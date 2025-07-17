@@ -9,6 +9,9 @@ export type ObjectType =
   | 'SummerSeed'
   | 'AutumnSeed'
   | 'WinterSeed'
+  | 'Sprout'
+  | 'Strawberry'
+  | 'Cherry'
   ;
 
 export interface ObjectCell {

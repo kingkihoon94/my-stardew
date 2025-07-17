@@ -37,11 +37,11 @@ export class MarketPopup extends Container {
     bg.endFill();
     this.addChild(bg);
 
-    const title = new Text('마켓 오픈', { fontSize: 24, fill: 0x000000 });
+    const title = new Text('마켓 오픈', { fontFamily: 'Galmuri11', fontSize: 24, fill: 0x000000 });
     title.position.set(250, 10);
     this.addChild(title);
 
-    const exitBtn = new Text('X', { fontSize: 20, fill: 0xff0000 });
+    const exitBtn = new Text('X', { fontFamily: 'Galmuri11', fontSize: 20, fill: 0xff0000 });
     exitBtn.position.set(570, 10); // 오른쪽 상단
     exitBtn.eventMode = 'static';
     exitBtn.cursor = 'pointer';
@@ -75,33 +75,33 @@ export class MarketPopup extends Container {
 
       const hasEnoughWood = player.inventory.wood >= wood;
       const hasEnoughStone = player.inventory.stone >= stone;
-      const hasEnoughGold = player.inventory.gold >= gold;
+      const hasEnoughGold = player.gold >= gold;
 
       const textContainer = new Container();
 
       const baseText = new Text(
-        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  | 필요 자원 : `,
-        { fontSize: 16, fill: 0x000000 }
+        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  | `,
+        { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 }
       );
       textContainer.addChild(baseText);
 
       const woodText = new Text(
         `🌲 ${wood}`,
-        { fontSize: 16, fill: hasEnoughWood ? 0x000000 : 0xff0000 }
+        { fontFamily: 'Galmuri11', fontSize: 16, fill: hasEnoughWood ? 0x000000 : 0xff0000 }
       );
       woodText.x = baseText.width;
       textContainer.addChild(woodText);
 
       const stoneText = new Text(
         `  🪨 ${stone}`,
-        { fontSize: 16, fill: hasEnoughStone ? 0x000000 : 0xff0000 }
+        { fontFamily: 'Galmuri11', fontSize: 16, fill: hasEnoughStone ? 0x000000 : 0xff0000 }
       );
       stoneText.x = baseText.width + woodText.width;
       textContainer.addChild(stoneText);
 
       const goldText = new Text(
         `  💰 ${gold}`,
-        { fontSize: 16, fill: hasEnoughGold ? 0x000000 : 0xff0000 }
+        { fontFamily: 'Galmuri11', fontSize: 16, fill: hasEnoughGold ? 0x000000 : 0xff0000 }
       );
       goldText.x = baseText.width + woodText.width + stoneText.width;
       textContainer.addChild(goldText);
@@ -126,7 +126,7 @@ export class MarketPopup extends Container {
     seedBg.endFill();
     buySeedBtn.addChild(seedBg);
 
-    const seedText = new Text('🌱 씨앗 1개 구매', { fontSize: 16, fill: 0x000000 });
+    const seedText = new Text('🌱 씨앗 1개 구매', { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
     seedText.position.set(10, 10);
     buySeedBtn.addChild(seedText);
 
@@ -147,7 +147,7 @@ export class MarketPopup extends Container {
     woodBg.endFill();
     sellWoodBtn.addChild(woodBg);
 
-    const woodText = new Text('🌲 나무 1개 판매', { fontSize: 16, fill: 0x000000 });
+    const woodText = new Text('🌲 나무 1개 판매', { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
     woodText.position.set(10, 10);
     sellWoodBtn.addChild(woodText);
 
@@ -168,7 +168,7 @@ export class MarketPopup extends Container {
     stoneBg.endFill();
     sellStoneBtn.addChild(stoneBg);
 
-    const stoneText = new Text('🪨 돌 1개 판매', { fontSize: 16, fill: 0x000000 });
+    const stoneText = new Text('🪨 돌 1개 판매', { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
     stoneText.position.set(10, 10);
     sellStoneBtn.addChild(stoneText);
 
@@ -177,8 +177,8 @@ export class MarketPopup extends Container {
 
   private attemptBuyItem(player: Player, item: 'seed'): void {
     if (item === 'seed') {
-      if (player.inventory.gold >= COST_SEED) {
-        player.inventory.gold -= COST_SEED;
+      if (player.gold >= COST_SEED) {
+        player.gold -= COST_SEED;
         player.inventory.springSeed++;;
         SoundManager.playEffect('success');
         this.refresh();
@@ -189,14 +189,14 @@ export class MarketPopup extends Container {
   private attemptSellItem(player: Player, item: 'wood' | 'stone'): void {
     if (item === 'wood') {
       if (player.inventory.wood > 0) {
-        player.inventory.gold += COST_WOOD;
+        player.gold += COST_WOOD;
         player.inventory.wood--;
         SoundManager.playEffect('getCoin');
         this.refresh();
       }
     } else if (item === 'stone') {
       if (player.inventory.stone > 0) {
-        player.inventory.gold += COST_STONE;
+        player.gold += COST_STONE;
         player.inventory.stone--;
         SoundManager.playEffect('getCoin');
         this.refresh();
@@ -210,11 +210,11 @@ export class MarketPopup extends Container {
     if (
       player.inventory.wood >= required &&
       player.inventory.stone >= required &&
-      player.inventory.gold >= required * 2
+      player.gold >= required * 2
     ) {
       player.inventory.wood -= required;
       player.inventory.stone -= required;
-      player.inventory.gold -= required * 2;
+      player.gold -= required * 2;
       player.tools[tool]++;
       SoundManager.playEffect('levelUp');
       this.refresh();

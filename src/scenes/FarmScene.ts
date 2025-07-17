@@ -11,10 +11,14 @@ import treeImage from '../assets/texture/tree.png';
 import stoneImage from '../assets/texture/stone.png';
 import fondImage from '../assets/texture/fond.png';
 import seedImage from '../assets/texture/seed.png';
+import strawberryImage from '../assets/texture/spring_strawberry.png';
+import cherryImage from "../assets/texture/spring_cherry.png";
 
 import { TILE_SIZE } from '../constants';
 import { House } from '../objects/House';
 import { Market } from '../objects/Market';
+import { StatusBar } from '../objects/StatusBar';
+import { Ticker } from '@pixi/core';
 
 export class FarmScene {
   public player: Player;
@@ -22,6 +26,8 @@ export class FarmScene {
 
   private house: House;
   private market: Market;
+
+  private ticker: Ticker;
 
   private tileContainer: Container;
   private playerContainer: Container;
@@ -39,10 +45,9 @@ export class FarmScene {
   private toastTimer = 0;
   private toastQueue: string[] = [];
 
-  private woodText: Text;
-  private stoneText: Text;
-  private waterText: Text;
-  private goldText: Text;
+  public hpBar: StatusBar;
+  public staminaBar: StatusBar;
+  public waterBar: StatusBar;
 
   constructor(stage: Container) {
     this.tileContainer = new Container();
@@ -73,28 +78,36 @@ export class FarmScene {
     this.market.occupyMap(this.objectMap);
     this.market.draw(this.objectContainer);
 
-    this.toastText = new Text('', { fontSize: 24, fill: 0xff0000 });
+    this.toastText = new Text('', { fontFamily: 'Galmuri11', fontSize: 24, fill: 0xff0000 });
     this.toastText.position.set(400, 20);
     this.toastText.visible = false;
     this.uiContainer.addChild(this.toastText);
 
-    this.woodText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.woodText.position.set(670, 20);
-    this.uiContainer.addChild(this.woodText);
+    // 체력바 관련.
+    this.hpBar = new StatusBar(this.player.maxHp, '체력', 90, 10, 0xff0000);
+    this.hpBar.position.set(700, 20);
+    this.uiContainer.addChild(this.hpBar);
 
-    this.stoneText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.stoneText.position.set(740, 20);
-    this.uiContainer.addChild(this.stoneText);
+    // 스태미너바 관련.
+    this.staminaBar = new StatusBar(this.player.maxStamina, '기력', 90, 10, 0x00aa00);
+    this.staminaBar.position.set(700, 50);
+    this.uiContainer.addChild(this.staminaBar);
 
-    this.waterText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.waterText.position.set(670, 50);
-    this.uiContainer.addChild(this.waterText);
+    this.waterBar = new StatusBar(this.player.maxWater, '물', 90, 10, 0x0000FF);
+    this.waterBar.position.set(700, 80);
+    this.uiContainer.addChild(this.waterBar);
 
-    this.goldText = new Text('', { fontSize: 14, fill: 0x000000 });
-    this.goldText.position.set(740, 50);
-    this.uiContainer.addChild(this.goldText);
+    this.ticker = new Ticker();
+    this.ticker.add(this.update.bind(this));
+    this.ticker.start();
+  }
 
-    this.updateInventoryInfo();
+  private update(): void {
+    this.toastUpdate();
+
+    this.hpBar.update(this.player.hp, this.player.maxHp);
+    this.staminaBar.update(this.player.stamina, this.player.maxStamina);
+    this.waterBar.update(this.player.water, this.player.maxWater);
   }
 
   private generateMap(): void {
@@ -199,6 +212,22 @@ export class FarmScene {
       seedSprite.height = TILE_SIZE;
       this.objectContainer.addChild(seedSprite);
       object.sprite = seedSprite;
+    } else if (object?.type === 'Strawberry') {
+      const strawberrySprite = Sprite.from(strawberryImage);
+      strawberrySprite.x = col * TILE_SIZE;
+      strawberrySprite.y = row * TILE_SIZE;
+      strawberrySprite.width = TILE_SIZE;
+      strawberrySprite.height = TILE_SIZE;
+      this.objectContainer.addChild(strawberrySprite);
+      object.sprite = strawberrySprite;
+    } else if (object?.type === 'Cherry') {
+      const cherrySprite = Sprite.from(cherryImage);
+      cherrySprite.x = col * TILE_SIZE;
+      cherrySprite.y = row * TILE_SIZE;
+      cherrySprite.width = TILE_SIZE;
+      cherrySprite.height = TILE_SIZE;
+      this.objectContainer.addChild(cherrySprite);
+      object.sprite = cherrySprite;
     }
   }
 
@@ -235,6 +264,7 @@ export class FarmScene {
   /** 해당 맵에 오브젝트 넣는거 까지만 하는 함수. 그리는 부분은 drawObject 에서 한다. */
   public updateObject(row: number, col: number, item: ObjectType | null): void {
     const object = this.objectMap[row][col];
+
     if (object?.sprite) {
       this.objectContainer.removeChild(object.sprite);
     }
@@ -244,7 +274,16 @@ export class FarmScene {
       this.objectMap[row][col] = { type: 'Tree', sprite: null };
       this.drawObject(row, col);
     } else if (item === 'SpringSeed') {
-      this.objectMap[row][col] = { type: 'SpringSeed', sprite: null, data: { dayCnt: 0 } }
+      this.objectMap[row][col] = { type: 'SpringSeed', sprite: null, data: { dayCnt: 0 } };
+      this.drawObject(row, col);
+    } else if (item === 'Sprout') {
+      this.objectMap[row][col] = { type: 'Sprout', sprite: null, data: { dayCnt: 0 } };
+      this.drawObject(row, col);
+    } else if (item === 'Strawberry') {
+      this.objectMap[row][col] = { type: 'Strawberry', sprite: null };
+      this.drawObject(row, col);
+    } else if (item === 'Cherry') {
+      this.objectMap[row][col] = { type: 'Cherry', sprite: null };
       this.drawObject(row, col);
     }
   }
@@ -273,13 +312,6 @@ export class FarmScene {
     }
   }
 
-  public updateInventoryInfo(): void {
-    this.woodText.text = `🌲 ${this.player.inventory.wood}`;
-    this.stoneText.text = `🪨 ${this.player.inventory.stone}`;
-    this.waterText.text = `💧 ${this.player.inventory.water}`;
-    this.goldText.text = `💰 ${this.player.inventory.gold}`;
-  }
-
   /** 다음 날로 갈때 계산해야 하는 것들 모음. */
   public nextDaySimulate(): void {
     this.nextDaySeedSimulate();
@@ -299,7 +331,8 @@ export class FarmScene {
             object.data.dayCnt++;
 
             if (object.data.dayCnt === 3) {
-              this.updateObject(row, col, 'Tree');
+              const fruit = Math.random() < 0.3 ? 'Strawberry' : 'Cherry';
+              this.updateObject(row, col, fruit);
             }
           } else {
             this.updateObject(row, col, null);

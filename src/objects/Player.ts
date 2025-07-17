@@ -1,5 +1,6 @@
-import { Graphics } from '@pixi/graphics';
+import { Container } from '@pixi/display';
 import { Ticker } from '@pixi/core';
+import { Sprite } from '@pixi/sprite';
 
 import { FarmScene } from '../scenes/FarmScene';
 import { SoundManager } from '../core/SoundManager';
@@ -8,15 +9,32 @@ import { TileType } from '../types/Tile';
 import { CommonSkill, SpecializedSkill } from '../types/Skill';
 import { ObjectMap } from '../types/Object';
 
-import { EXP_COMMON, EXP_DIGGING, EXP_STONE, EXP_WATERING, EXP_WOOD, PLAYER_SIZE, STAMINA_DIGGING, STAMINA_STONE, STAMINA_WATER, STAMINA_WATERING, STAMINA_WOOD, TILE_SIZE } from '../constants';
+import playerUp from '../assets/texture/baby_down.png';
+import playerDown from '../assets/texture/baby_down.png';
+import playerLeft from '../assets/texture/baby_down.png';
+import playerRight from '../assets/texture/baby_down.png';
+
+
+import {
+  EXP_COMMON, EXP_DIGGING, EXP_STONE, EXP_WATERING, EXP_WOOD,
+  PLAYER_SIZE, TILE_SIZE,
+  STAMINA_DIGGING, STAMINA_STONE, STAMINA_WATER, STAMINA_WATERING, STAMINA_WOOD
+} from '../constants';
 
 export class Player {
-  public sprite: Graphics;
+  public sprite: Container;
+
+  private faceSprites: Record<'up' | 'down' | 'left' | 'right', Sprite>;
+  private lastDirection: 'up' | 'down' | 'left' | 'right' = 'down';
+
   public hp: number = 100;
   public stamina: number = 100;
+  public water: number = 0;
+  public gold: number = 0;
 
   public maxHp: number = 100;
   public maxStamina: number = 100;
+  public maxWater: number = 10;
 
   private skillNames: Record<string, string> = {
     common: '캐릭터',
@@ -28,13 +46,14 @@ export class Player {
   public inventory: Record<string, number> = {
     wood: 0,
     stone: 0,
-    water: 0,
-    gold: 0,
 
     springSeed: 0,
     summerSeed: 0,
     autumnSeed: 0,
     winterSeed: 0,
+
+    strawberry: 0,
+    cherry: 0,
   };
 
   public tools = {
@@ -83,8 +102,6 @@ export class Player {
   private tileMap: number[][] = [];
   private objectMap: ObjectMap = [];
 
-  private lastDirection: 'up' | 'down' | 'left' | 'right' = 'down';
-
   private exhaustedTicker: Ticker | null = null;
   private isExhausted: boolean = false;
 
@@ -94,9 +111,24 @@ export class Player {
   constructor(tileMap: number[][], objectMap: ObjectMap, private farmScene: FarmScene) {
     this.tileMap = tileMap;
     this.objectMap = objectMap;
-    this.sprite = new Graphics();
+    this.sprite = new Container();
+
+    this.faceSprites = {
+      up: Sprite.from(playerUp),
+      down: Sprite.from(playerDown),
+      left: Sprite.from(playerLeft),
+      right: Sprite.from(playerRight),
+    };
+
+    Object.values(this.faceSprites).forEach((sprite) => {
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      sprite.visible = false;
+      this.sprite.addChild(sprite);
+    });
+
+    this.faceSprites[this.lastDirection].visible = true;
     this.resetPosition();
-    this.drawPlayerFace(this.lastDirection);
 
     window.addEventListener('keydown', (e) => {
       this.handleKey(e);
@@ -104,7 +136,7 @@ export class Player {
   }
 
   public gainGold(amount: number): void {
-    this.inventory.gold += amount;
+    this.gold += amount;
   }
 
   public gainExp(key: 'wood' | 'stone' | 'farm', amount: number): void {
@@ -144,13 +176,14 @@ export class Player {
     this.sprite.x = TILE_SIZE * 9;
     this.sprite.y = TILE_SIZE * 3;
     this.lastDirection = 'down';
-    this.drawPlayerFace(this.lastDirection);
+    this.updatePlayerFace(this.lastDirection);
 
     if (this.isExhausted) {
       this.isExhausted = false;
       this.stopExhaustedEffect();
     }
   }
+
 
   public setIsPopupActive(active: boolean): void {
     this.isPopupActive = active;
@@ -207,7 +240,7 @@ export class Player {
       this.performSeed();
     }
 
-    this.drawPlayerFace(this.lastDirection);
+    this.updatePlayerFace(this.lastDirection);
   }
 
   private performAction(): void {
@@ -265,7 +298,7 @@ export class Player {
         return;
       }
       this.stamina -= STAMINA_WATER;
-      this.inventory.water++;
+      this.water++;
       SoundManager.playEffect('water');
       return;
     }
@@ -288,7 +321,7 @@ export class Player {
 
     // Tilled (물 주기)
     if (targetTile === TileType.Tilled) {
-      if (this.inventory.water === 0) {
+      if (this.water === 0) {
         SoundManager.playEffect('error');
         return;
       }
@@ -299,7 +332,7 @@ export class Player {
         return;
       }
       this.stamina -= stamina;
-      this.inventory.water--;
+      this.water--;
       this.tileMap[targetRow][targetCol] = TileType.Watered;
       this.gainExp('farm', EXP_WATERING);
       this.farmScene.updateTile(targetRow, targetCol);
@@ -364,57 +397,11 @@ export class Player {
     }
   }
 
-  private drawPlayerFace(direction: 'up' | 'down' | 'left' | 'right'): void {
-    this.sprite.clear();
-    this.sprite.beginFill(0xfbceb1);
-    this.sprite.drawRoundedRect(0, 0, this.tileSize, this.tileSize, 20);
-    this.sprite.endFill();
-
-    const centerX = this.tileSize / 2;
-    const centerY = this.tileSize / 2;
-    const offset = 3;
-    const eyeGap = 4;
-
-    let leftEyeX = centerX;
-    let leftEyeY = centerY;
-    let rightEyeX = centerX;
-    let rightEyeY = centerY;
-
-    if (direction === 'up') {
-      leftEyeX = centerX - eyeGap;
-      rightEyeX = centerX + eyeGap;
-      leftEyeY = rightEyeY = centerY - offset;
-    } else if (direction === 'down') {
-      leftEyeX = centerX - eyeGap;
-      rightEyeX = centerX + eyeGap;
-      leftEyeY = rightEyeY = centerY + offset;
-    } else if (direction === 'left') {
-      leftEyeX = rightEyeX = centerX - offset;
-      leftEyeY = centerY - eyeGap;
-      rightEyeY = centerY + eyeGap;
-    } else if (direction === 'right') {
-      leftEyeX = rightEyeX = centerX + offset;
-      leftEyeY = centerY - eyeGap;
-      rightEyeY = centerY + eyeGap;
-    }
-
-    this.sprite.beginFill(0x000000);
-    this.sprite.drawCircle(leftEyeX, leftEyeY, 2);
-    this.sprite.drawCircle(rightEyeX, rightEyeY, 2);
-    this.sprite.endFill();
-
-    const pacifierOffset = this.tileSize * 0.4;
-    let pacifierX = centerX;
-    let pacifierY = centerY;
-
-    if (direction === 'up') pacifierY -= pacifierOffset;
-    else if (direction === 'down') pacifierY += pacifierOffset;
-    else if (direction === 'left') pacifierX -= pacifierOffset;
-    else if (direction === 'right') pacifierX += pacifierOffset;
-
-    this.sprite.beginFill(0xffffff);
-    this.sprite.drawCircle(pacifierX, pacifierY, 4);
-    this.sprite.endFill();
+  private updatePlayerFace(direction: 'up' | 'down' | 'left' | 'right'): void {
+    Object.values(this.faceSprites).forEach((sprite) => {
+      sprite.visible = false;
+    });
+    this.faceSprites[direction].visible = true;
   }
 
   private canMove(nextX: number, nextY: number): boolean {
