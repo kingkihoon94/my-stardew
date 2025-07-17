@@ -45,6 +45,8 @@ export class FarmScene {
   private toastTimer = 0;
   private toastQueue: string[] = [];
 
+  private goldText: Text;
+
   public hpBar: StatusBar;
   public staminaBar: StatusBar;
   public waterBar: StatusBar;
@@ -78,10 +80,16 @@ export class FarmScene {
     this.market.occupyMap(this.objectMap);
     this.market.draw(this.objectContainer);
 
-    this.toastText = new Text('', { fontFamily: 'Galmuri11', fontSize: 24, fill: 0xff0000 });
-    this.toastText.position.set(400, 20);
+    // 토스트 알람 관련.
+    this.toastText = new Text('', { fontFamily: 'Galmuri11', fontSize: 18, fill: 0xff0000 });
+    this.toastText.position.set(20, 70);
     this.toastText.visible = false;
     this.uiContainer.addChild(this.toastText);
+
+    // 골드 관련.
+    this.goldText = new Text('', { fontFamily: 'Galmuri11', fontSize: 15, fill: 0xffd700 });
+    this.goldText.position.set(650, 10);
+    this.uiContainer.addChild(this.goldText);
 
     // 체력바 관련.
     this.hpBar = new StatusBar(this.player.maxHp, '체력', 90, 10, 0xff0000);
@@ -105,6 +113,7 @@ export class FarmScene {
   private update(): void {
     this.toastUpdate();
 
+    this.updateGold();
     this.hpBar.update(this.player.hp, this.player.maxHp);
     this.staminaBar.update(this.player.stamina, this.player.maxStamina);
     this.waterBar.update(this.player.water, this.player.maxWater);
@@ -310,6 +319,10 @@ export class FarmScene {
         this.showNextToast();
       }
     }
+  }
+
+  private updateGold(): void {
+    this.goldText.text = `${this.player.gold} G`;
   }
 
   /** 다음 날로 갈때 계산해야 하는 것들 모음. */
