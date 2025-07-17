@@ -175,11 +175,11 @@ export class MarketPopup extends Container {
     if (
       player.inventory.wood >= required &&
       player.inventory.stone >= required &&
-      player.inventory.gold >= required * 10
+      player.inventory.gold >= required * 2
     ) {
       player.inventory.wood -= required;
       player.inventory.stone -= required;
-      player.inventory.gold -= required * 10;
+      player.inventory.gold -= required * 2;
       player.tools[tool]++;
       this.refresh();
     }

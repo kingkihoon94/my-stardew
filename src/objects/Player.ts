@@ -1,9 +1,13 @@
 import { Graphics } from '@pixi/graphics';
-import { TileType } from '../types/Tile';
-import { FarmScene } from '../scenes/FarmScene';
 import { Ticker } from '@pixi/core';
+
+import { FarmScene } from '../scenes/FarmScene';
 import { SoundManager } from '../core/SoundManager';
+
+import { TileType } from '../types/Tile';
 import { CommonSkill, SpecializedSkill } from '../types/Skill';
+import { ObjectMap } from '../types/Object';
+
 import { EXP_COMMON, EXP_DIGGING, EXP_STONE, EXP_WATERING, EXP_WOOD, PLAYER_SIZE, STAMINA_DIGGING, STAMINA_STONE, STAMINA_WATER, STAMINA_WATERING, STAMINA_WOOD, TILE_SIZE } from '../constants';
 
 export class Player {
@@ -75,7 +79,10 @@ export class Player {
 
   private tileSize: number = TILE_SIZE;
   private speed: number = PLAYER_SIZE;
-  private mapData: number[][];
+
+  private tileMap: number[][] = [];
+  private objectMap: ObjectMap = [];
+
   private lastDirection: 'up' | 'down' | 'left' | 'right' = 'down';
 
   private exhaustedTicker: Ticker | null = null;
@@ -84,8 +91,9 @@ export class Player {
   private isPopupActive: boolean = false;
 
 
-  constructor(mapData: number[][], private farmScene: FarmScene) {
-    this.mapData = mapData;
+  constructor(tileMap: number[][], objectMap: ObjectMap, private farmScene: FarmScene) {
+    this.tileMap = tileMap;
+    this.objectMap = objectMap;
     this.sprite = new Graphics();
     this.resetPosition();
     this.drawPlayerFace(this.lastDirection);
@@ -207,57 +215,81 @@ export class Player {
     const targetCol = (this.sprite.x + offsetX) / this.tileSize;
     const targetRow = (this.sprite.y + offsetY) / this.tileSize;
 
-    if (targetRow < 0 || targetRow >= this.mapData.length || targetCol < 0 || targetCol >= this.mapData[0].length) return;
+    if (targetRow < 0 || targetRow >= this.tileMap.length || targetCol < 0 || targetCol >= this.tileMap[0].length) return;
 
-    const targetTile = this.mapData[targetRow][targetCol];
+    const targetTile = this.tileMap[targetRow][targetCol];
+    const targetObject = this.objectMap[targetRow][targetCol];
 
-    if (targetTile === TileType.Tree) {
+    // Tree (벌목)
+    if (targetObject?.type === 'Tree') {
       const stamina = Math.max(1, STAMINA_WOOD - ((this.skills.wood.level - 1) * this.skills.wood.staminaReducePerLevel));
       if (this.stamina < stamina) return;
       this.stamina -= stamina;
-      this.mapData[targetRow][targetCol] = TileType.Soil;
+      this.objectMap[targetRow][targetCol] = null;
       this.gainExp('wood', EXP_WOOD);
       this.inventory.wood++;
-      this.farmScene.updateTile(targetRow, targetCol);
+      this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('chop');
-    } else if (targetTile === TileType.SoilWithStone) {
+      return;
+    }
+
+    // Stone (채광)
+    if (targetObject?.type === 'Stone') {
       const stamina = Math.max(1, STAMINA_STONE - ((this.skills.stone.level - 1) * this.skills.stone.staminaReducePerLevel));
       if (this.stamina < stamina) return;
       this.stamina -= stamina;
-      this.mapData[targetRow][targetCol] = TileType.Soil;
+      this.objectMap[targetRow][targetCol] = null;
       this.gainExp('stone', EXP_STONE);
       this.inventory.stone++;
-      this.farmScene.updateTile(targetRow, targetCol);
+      this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('mine');
-    } else if (targetTile === TileType.Water) {
+      return;
+    }
+
+    // Market (상점)
+    if (targetObject?.type === 'Market') {
+      this.farmScene.onOpenMarket?.();
+      return;
+    }
+
+    // Water (물 뜨기)
+    if (targetTile === TileType.Water) {
       if (this.stamina < STAMINA_WATER) return;
       this.stamina -= STAMINA_WATER;
       this.inventory.water++;
       SoundManager.playEffect('water');
-    } else if (targetTile === TileType.Soil) {
+      return;
+    }
+
+    // Soil (경작)
+    if (targetTile === TileType.Soil) {
       const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
       const stamina = Math.max(1, STAMINA_DIGGING - reduceStamina);
       if (this.stamina < stamina) return;
       this.stamina -= stamina;
-      this.mapData[targetRow][targetCol] = TileType.Tilled;
+      this.tileMap[targetRow][targetCol] = TileType.Tilled;
       this.gainExp('farm', EXP_DIGGING);
       this.farmScene.updateTile(targetRow, targetCol);
       SoundManager.playEffect('dig');
-    } else if (targetTile === TileType.Tilled) {
+      return;
+    }
+
+    // Tilled (물 주기)
+    if (targetTile === TileType.Tilled) {
       if (this.inventory.water === 0) return;
       const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
       const stamina = Math.max(1, STAMINA_WATERING - reduceStamina);
       if (this.stamina < stamina) return;
       this.stamina -= stamina;
       this.inventory.water--;
-      this.mapData[targetRow][targetCol] = TileType.Watered;
+      this.tileMap[targetRow][targetCol] = TileType.Watered;
       this.gainExp('farm', EXP_WATERING);
       this.farmScene.updateTile(targetRow, targetCol);
       SoundManager.playEffect('water');
-    } else if (targetTile === TileType.Market) {
-      this.farmScene.onOpenMarket?.();
+      return;
     }
   }
+
 
   public showExhaustedEffect(): void {
     let direction = -1;
@@ -336,12 +368,24 @@ export class Player {
     const col = nextX / this.tileSize;
     const row = nextY / this.tileSize;
 
-    if (row < 0 || row >= this.mapData.length || col < 0 || col >= this.mapData[0].length) {
+    if (row < 0 || row >= this.tileMap.length || col < 0 || col >= this.tileMap[0].length) {
       return false;
     }
 
-    const tile = this.mapData[row][col];
-    return tile === TileType.Soil || tile === TileType.Tilled || tile === TileType.Watered || tile === TileType.Stone;
+    const tile = this.tileMap[row][col];
+    const object = this.objectMap[row][col];
+
+    // (1) 물이면 못감
+    if (tile === TileType.Water) {
+      return false;
+    }
+
+    // (2) 씨앗이 아닌 다른 오브젝트가 있으면 못감
+    if (object && !['SpringSeed', 'SummerSeed', 'AutumnSeed', 'WinterSeed'].includes(object.type)) {
+      return false;
+    }
+
+    return true;
   }
 }
 
