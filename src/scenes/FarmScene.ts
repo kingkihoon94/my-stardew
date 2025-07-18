@@ -5,12 +5,13 @@ import { Text } from '@pixi/text';
 
 import { Player } from '../objects/Player';
 import { TileType } from '../types/Tile';
-import { ObjectCell, ObjectMap, ObjectType } from '../types/Object';
+import { FruitType, ObjectCell, ObjectMap, ObjectType } from '../types/Object';
 
 import treeImage from '../assets/texture/tree.png';
 import stoneImage from '../assets/texture/stone.png';
 import fondImage from '../assets/texture/fond.png';
 import seedImage from '../assets/texture/seed.png';
+import sproutImage from '../assets/texture/sprout.png';
 import strawberryImage from '../assets/texture/spring_strawberry.png';
 import cherryImage from "../assets/texture/spring_cherry.png";
 
@@ -21,45 +22,57 @@ import { StatusBar } from '../objects/StatusBar';
 import { Ticker } from '@pixi/core';
 
 export class FarmScene {
-  public player: Player;
-  public onOpenMarket?: () => void;
-
-  private house: House;
-  private market: Market;
-
-  private ticker: Ticker;
-
+  // 컨테이너 Layer 관련.
   private tileContainer: Container;
+  private lowerObjectContainer = new Container();
   private playerContainer: Container;
-  private objectContainer: Container;
+  private upperObjectContainer: Container;
   private uiContainer: Container;
 
+  // 플레이어 관련.
+  public player: Player;
+
+  // 건물 관련.
+  private house: House;
+  private market: Market;
+  public onOpenMarket?: () => void;
+
+  // 맵 크기 관련.
   private cols: number = 25;
   private rows: number = 19;
   private fixedMapRows: number = 5;
 
+  // 맵 내 데이터 관련.
   private tileMap: number[][] = [];
   private objectMap: ObjectMap = [];
 
+  // 토스트 알람 관련.
   private toastText: Text;
   private toastTimer = 0;
   private toastQueue: string[] = [];
 
+  // 골드 UI 관련.
   private goldText: Text;
 
+  // 스테이터스 바 관련.
   public hpBar: StatusBar;
   public staminaBar: StatusBar;
   public waterBar: StatusBar;
 
+  // Ticker 관련.
+  private ticker: Ticker;
+
   constructor(stage: Container) {
     this.tileContainer = new Container();
-    this.objectContainer = new Container();
+    this.lowerObjectContainer = new Container();
     this.playerContainer = new Container();
+    this.upperObjectContainer = new Container();
     this.uiContainer = new Container();
 
     stage.addChild(this.tileContainer);
+    stage.addChild(this.lowerObjectContainer);
     stage.addChild(this.playerContainer);
-    stage.addChild(this.objectContainer);
+    stage.addChild(this.upperObjectContainer);
     stage.addChild(this.uiContainer);
 
     this.generateMap();
@@ -73,12 +86,12 @@ export class FarmScene {
     // 하우스 관련.
     this.house = new House(7, 1, 5, 2);
     this.house.occupyMap(this.objectMap);
-    this.house.draw(this.objectContainer);
+    this.house.draw(this.upperObjectContainer);
 
     // 마켓 관련.
     this.market = new Market(14, 1, 3, 2);
     this.market.occupyMap(this.objectMap);
-    this.market.draw(this.objectContainer);
+    this.market.draw(this.upperObjectContainer);
 
     // 토스트 알람 관련.
     this.toastText = new Text('', { fontFamily: 'Galmuri11', fontSize: 18, fill: 0xff0000 });
@@ -91,12 +104,11 @@ export class FarmScene {
     this.goldText.position.set(650, 10);
     this.uiContainer.addChild(this.goldText);
 
-    // 체력바 관련.
+    // 스테이터스 바 관련.
     this.hpBar = new StatusBar(this.player.maxHp, '체력', 90, 10, 0xff0000);
     this.hpBar.position.set(700, 20);
     this.uiContainer.addChild(this.hpBar);
 
-    // 스태미너바 관련.
     this.staminaBar = new StatusBar(this.player.maxStamina, '기력', 90, 10, 0x00aa00);
     this.staminaBar.position.set(700, 50);
     this.uiContainer.addChild(this.staminaBar);
@@ -105,24 +117,18 @@ export class FarmScene {
     this.waterBar.position.set(700, 80);
     this.uiContainer.addChild(this.waterBar);
 
+    // Ticker 관련.
     this.ticker = new Ticker();
     this.ticker.add(this.update.bind(this));
     this.ticker.start();
   }
 
-  private update(): void {
-    this.toastUpdate();
-
-    this.updateGold();
-    this.hpBar.update(this.player.hp, this.player.maxHp);
-    this.staminaBar.update(this.player.stamina, this.player.maxStamina);
-    this.waterBar.update(this.player.water, this.player.maxWater);
-  }
-
+  /** 맵 초기 생성 함수 */
   private generateMap(): void {
     this.tileMap = [];
     this.objectMap = [];
 
+    // 각 행렬에 맞는 타일 유형 및 확률적으로 나무와 돌 오브젝트 생성.
     for (let row = 0; row < this.rows; row++) {
       const rowData: TileType[] = [];
       const objectRow: (ObjectCell | null)[] = [];
@@ -133,11 +139,13 @@ export class FarmScene {
 
         if (isSoil && Math.random() < 0.2) {
           objectRow.push({
+            target: 'upper',
             type: 'Tree',
             sprite: null,
           });
         } else if (isSoil && Math.random() < 0.15) {
           objectRow.push({
+            target: 'upper',
             type: 'Stone',
             sprite: null,
           });
@@ -148,6 +156,7 @@ export class FarmScene {
       this.objectMap.push(objectRow);
     }
 
+    // 연못 크기 및 위치 랜덤 배치
     const waterWidth = Math.floor(Math.random() * 3) + 5;   // 물 구역 넓이는 5 ~ 7
     const waterHeight = Math.floor(Math.random() * 3) + 3;  // 물 구역 높이는 3 ~ 5
 
@@ -162,7 +171,7 @@ export class FarmScene {
     pondSprite.y = startY * TILE_SIZE;
     pondSprite.width = waterWidth * TILE_SIZE;
     pondSprite.height = waterHeight * TILE_SIZE;
-    this.objectContainer.addChild(pondSprite);
+    this.upperObjectContainer.addChild(pondSprite);
 
     for (let row = startY; row < startY + waterHeight; row++) {
       for (let col = startX; col < startX + waterWidth; col++) {
@@ -170,8 +179,9 @@ export class FarmScene {
         this.objectMap[row][col] = null;
       }
     }
-  }
+  }//end generateMap.
 
+  /** 맵 전체를 타일 유형에 맞게 그리는 함수 */
   private drawTiles(): void {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
@@ -184,8 +194,9 @@ export class FarmScene {
         this.tileContainer.addChild(g);
       }
     }
-  }
+  }//end drawTiles.
 
+  /** 맵 전체 오브젝트를 그리는 함수 */
   private drawObjects(): void {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
@@ -194,63 +205,87 @@ export class FarmScene {
     }
   }
 
+  /** 특정 row, col 에 오브젝트 그리는 함수. */
   private drawObject(row: number, col: number): void {
     const object = this.objectMap[row][col];
 
-    if (object?.type === 'Tree') {
-      const treeSprite = Sprite.from(treeImage);
-      treeSprite.anchor.set(0.5, 1.05); // X는 가운데, Y는 아래 기준 (땅에 닿게)
-      treeSprite.x = col * TILE_SIZE + TILE_SIZE / 2;
-      treeSprite.y = row * TILE_SIZE + TILE_SIZE; // 타일 하단에 맞춤
-      treeSprite.scale.set(0.09); // 필요에 따라 조정, 비율 유지
-      this.objectContainer.addChild(treeSprite);
-      object.sprite = treeSprite;
-    } else if (object?.type === 'Stone') {
-      const stoneSprite = Sprite.from(stoneImage);
-      stoneSprite.anchor.set(0.5, 0.75); // X는 가운데, Y는 아래 기준 (땅에 닿게)
-      stoneSprite.x = col * TILE_SIZE + TILE_SIZE / 2;
-      stoneSprite.y = row * TILE_SIZE + TILE_SIZE; // 타일 하단에 맞춤
-      stoneSprite.scale.set(0.014, 0.025); // 필요에 따라 조정, 비율 유지
-      this.objectContainer.addChild(stoneSprite);
-      object.sprite = stoneSprite;
-    } else if (object?.type === 'SpringSeed') {
-      const seedSprite = Sprite.from(seedImage);
-      seedSprite.x = col * TILE_SIZE;
-      seedSprite.y = row * TILE_SIZE;
-      seedSprite.width = TILE_SIZE;
-      seedSprite.height = TILE_SIZE;
-      this.objectContainer.addChild(seedSprite);
-      object.sprite = seedSprite;
-    } else if (object?.type === 'Strawberry') {
-      const strawberrySprite = Sprite.from(strawberryImage);
-      strawberrySprite.x = col * TILE_SIZE;
-      strawberrySprite.y = row * TILE_SIZE;
-      strawberrySprite.width = TILE_SIZE;
-      strawberrySprite.height = TILE_SIZE;
-      this.objectContainer.addChild(strawberrySprite);
-      object.sprite = strawberrySprite;
-    } else if (object?.type === 'Cherry') {
-      const cherrySprite = Sprite.from(cherryImage);
-      cherrySprite.x = col * TILE_SIZE;
-      cherrySprite.y = row * TILE_SIZE;
-      cherrySprite.width = TILE_SIZE;
-      cherrySprite.height = TILE_SIZE;
-      this.objectContainer.addChild(cherrySprite);
-      object.sprite = cherrySprite;
+    if (!object) return;
+
+    const targetContainer = object.target === 'upper' ? this.upperObjectContainer : this.lowerObjectContainer;
+
+    if (object.type === 'Tree') {
+      const sprite = Sprite.from(treeImage);
+      sprite.anchor.set(0.5, 1.05); // X는 가운데, Y는 아래 기준 (땅에 닿게)
+      sprite.x = col * TILE_SIZE + TILE_SIZE / 2;
+      sprite.y = row * TILE_SIZE + TILE_SIZE; // 타일 하단에 맞춤
+      sprite.scale.set(0.09); // 필요에 따라 조정, 비율 유지
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Stone') {
+      const sprite = Sprite.from(stoneImage);
+      sprite.anchor.set(0.5, 0.75); // X는 가운데, Y는 아래 기준 (땅에 닿게)
+      sprite.x = col * TILE_SIZE + TILE_SIZE / 2;
+      sprite.y = row * TILE_SIZE + TILE_SIZE; // 타일 하단에 맞춤
+      sprite.scale.set(0.014, 0.025); // 필요에 따라 조정, 비율 유지
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'SpringSeed') {
+      const sprite = Sprite.from(seedImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Sprout') {
+      const sprite = Sprite.from(sproutImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Strawberry') {
+      const sprite = Sprite.from(strawberryImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Cherry') {
+      const sprite = Sprite.from(cherryImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
     }
   }
 
+  /** Ticker 를 통해 매번 갱신해줘야 하는 함수 모음. */
+  private update(): void {
+    this.toastUpdate();
+    this.updateGold();
+    this.hpBar.update(this.player.hp, this.player.maxHp);
+    this.staminaBar.update(this.player.stamina, this.player.maxStamina);
+    this.waterBar.update(this.player.water, this.player.maxWater);
+  }
+
+  /** 타일 유형에 맞춰 색상 값 뽑아내는 함수. */
   private getTileColor(tile: TileType): number {
     switch (tile) {
       case TileType.Soil: return 0xdeb887;
       case TileType.Tilled: return 0xcd853f;
-      case TileType.Watered: return 0x87ceeb;
+      case TileType.Watered: return 0x8b5a2b;
       case TileType.Stone: return 0xa9a9a9;
       case TileType.Water: return 0xdeb887;
       default: return 0x8b5a2b;
     }
   }
 
+  /** 타일 색깔에 맞춰 테구리 색깔 계산하는 함수. */
   public darkenColor(hex: number, amount: number): number {
     const r = Math.max(0, ((hex >> 16) & 0xff) - amount);
     const g = Math.max(0, ((hex >> 8) & 0xff) - amount);
@@ -258,7 +293,8 @@ export class FarmScene {
     return (r << 16) + (g << 8) + b;
   }
 
-  public updateTile(row: number, col: number): void {
+  /** 특정 row, col 에 타일 그리는 함수. *//** x */
+  public drawTile(row: number, col: number): void {
     const index = row * this.cols + col;
     const color = this.getTileColor(this.tileMap[row][col]);
 
@@ -270,33 +306,47 @@ export class FarmScene {
     g.endFill();
   }
 
-  /** 해당 맵에 오브젝트 넣는거 까지만 하는 함수. 그리는 부분은 drawObject 에서 한다. */
+  /** 특정 row, col 에 오브젝트 채우는 함수. */
   public updateObject(row: number, col: number, item: ObjectType | null): void {
     const object = this.objectMap[row][col];
 
-    if (object?.sprite) {
-      this.objectContainer.removeChild(object.sprite);
+    if (!!object) {
+      const targetContainer = object.target === 'upper' ? this.upperObjectContainer : this.lowerObjectContainer;
+      if (object.sprite) {
+        targetContainer.removeChild(object.sprite);
+      }
     }
-    this.objectMap[row][col] = null;
 
-    if (item === 'Tree') {
-      this.objectMap[row][col] = { type: 'Tree', sprite: null };
-      this.drawObject(row, col);
-    } else if (item === 'SpringSeed') {
-      this.objectMap[row][col] = { type: 'SpringSeed', sprite: null, data: { dayCnt: 0 } };
+    if (item === 'SpringSeed') {
+      this.objectMap[row][col] = { target: 'lower', type: 'SpringSeed', sprite: null, data: { dayCnt: 0, duration: 3 } };
       this.drawObject(row, col);
     } else if (item === 'Sprout') {
-      this.objectMap[row][col] = { type: 'Sprout', sprite: null, data: { dayCnt: 0 } };
+      this.objectMap[row][col] = { target: 'lower', type: 'Sprout', sprite: null, data: { dayCnt: 0, duration: 4 } };
       this.drawObject(row, col);
     } else if (item === 'Strawberry') {
-      this.objectMap[row][col] = { type: 'Strawberry', sprite: null };
-      this.drawObject(row, col);
+      this.updateFruitObject(row, col, 'Strawberry');
     } else if (item === 'Cherry') {
-      this.objectMap[row][col] = { type: 'Cherry', sprite: null };
-      this.drawObject(row, col);
-    }
+      this.updateFruitObject(row, col, 'Cherry');
+    } else this.objectMap[row][col] = null;
   }
 
+  /** 특정 row, col 에 과일(열매) 채우는 함수. */
+  private updateFruitObject(row: number, col: number, type: FruitType): void {
+    const randomQuality = Math.random();
+
+    let quality: 0 | 1 | 2 = 0;
+    if (randomQuality < 0.1) {
+      quality = 2;
+    } else if (randomQuality < 0.4) {
+      quality = 1;
+    }
+
+    this.objectMap[row][col] = { target: 'upper', type, sprite: null, data: { dayCnt: 0, duration: 3, quality } };
+    this.drawObject(row, col);
+  }
+
+
+  /** 토스트 알람 메세지 내용 큐 넣는 함수. */
   public queueToast(message: string): void {
     this.toastQueue.push(message);
     if (!this.toastText.visible) {
@@ -304,6 +354,7 @@ export class FarmScene {
     }
   }
 
+  /** 토스트 알람 노출 함수. */
   private showNextToast(): void {
     if (this.toastQueue.length === 0) return;
     this.toastText.text = this.toastQueue.shift()!;
@@ -311,6 +362,7 @@ export class FarmScene {
     this.toastTimer = 90;
   }
 
+  /** 토스트 알람 타이머를 위한 함수. */
   public toastUpdate(): void {
     if (this.toastTimer > 0) {
       this.toastTimer--;
@@ -321,6 +373,7 @@ export class FarmScene {
     }
   }
 
+  /** 현재 골드 상태 UI 갱신 함수. */
   private updateGold(): void {
     this.goldText.text = `${this.player.gold} G`;
   }
@@ -336,41 +389,43 @@ export class FarmScene {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
         const object = this.objectMap[row][col];
+        if (!object || object.target === 'upper') continue;
 
-        if (object?.type === 'SpringSeed') {
-          const tile = this.tileMap[row][col];
-
-          if (tile === TileType.Watered) {
-            object.data.dayCnt++;
-
-            if (object.data.dayCnt === 3) {
-              const fruit = Math.random() < 0.3 ? 'Strawberry' : 'Cherry';
-              this.updateObject(row, col, fruit);
-            }
-          } else {
-            this.updateObject(row, col, null);
-          }
+        const tileType = this.tileMap[row][col];
+        if (tileType !== TileType.Watered) {
+          this.updateObject(row, col, null);
+          continue;
         }
 
-      }
-    }
-  }
+        object.data.dayCnt++;
+        if (object.data.dayCnt < object.data.duration) continue;
+
+        if (object.type === 'SpringSeed') {
+          this.updateObject(row, col, 'Sprout');
+        } else if (object.type === 'Sprout') {
+          const fruit = Math.random() < 0.3 ? 'Strawberry' : 'Cherry';
+          this.updateObject(row, col, fruit);
+        }
+
+      }//end for2.
+    }//end for1.
+  }//end nextDaySeedSimulate.
 
   /** 다음 날 갈때 타일 타입 재 계산. */
   private nextDayTileSimulate(): void {
     for (let row = 0; row < this.rows; row++) {
       for (let col = 0; col < this.cols; col++) {
-        const tile = this.tileMap[row][col];
+        const tileType = this.tileMap[row][col];
 
-        if (tile === TileType.Watered) {
+        if (tileType === TileType.Watered) {
           this.tileMap[row][col] = TileType.Tilled;
-          this.updateTile(row, col);
-        } else if (tile === TileType.Tilled) {
+          this.drawTile(row, col);
+        } else if (tileType === TileType.Tilled) {
           this.tileMap[row][col] = TileType.Soil;
-          this.updateTile(row, col);
+          this.drawTile(row, col);
         }
-      }
-    }
-  }
+      }//end for2.
+    }//end for1.
+  }//end nextDayTileSimulate.
 
 }

@@ -308,7 +308,7 @@ export class Player {
       this.stamina -= stamina;
       this.tileMap[targetRow][targetCol] = TileType.Tilled;
       this.gainExp('farm', EXP_DIGGING);
-      this.farmScene.updateTile(targetRow, targetCol);
+      this.farmScene.drawTile(targetRow, targetCol);
       SoundManager.playEffect('dig');
       return;
     }
@@ -329,7 +329,7 @@ export class Player {
       this.water--;
       this.tileMap[targetRow][targetCol] = TileType.Watered;
       this.gainExp('farm', EXP_WATERING);
-      this.farmScene.updateTile(targetRow, targetCol);
+      this.farmScene.drawTile(targetRow, targetCol);
       SoundManager.playEffect('water');
       return;
     }
@@ -425,8 +425,11 @@ export class Player {
       return false;
     }
 
-    // (2) 다른 오브젝트가 있으면 못감
-    return !object;
+    // (2) 오브젝트가 없거나 있어도 lower 타입인 경우 통과 가능.
+    if (!object || object.target === 'lower') {
+      return true;
+    }
+    return false;
   }
 }
 

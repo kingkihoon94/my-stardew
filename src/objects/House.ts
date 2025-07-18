@@ -22,7 +22,7 @@ export class House {
   public occupyMap(objectMap: ObjectMap): void {
     for (let row = this.y; row < this.y + this.height; row++) {
       for (let col = this.x; col < this.x + this.width; col++) {
-        objectMap[row][col] = { type: 'House', sprite: null };
+        objectMap[row][col] = { target: 'upper', type: 'House', sprite: null };
       }
     }
   }

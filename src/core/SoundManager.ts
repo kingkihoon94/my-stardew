@@ -28,6 +28,8 @@ export class SoundManager {
       new Howl({ src: [farmBGM3], volume: 0.3 }),
     ];
 
+    this.currentBGMIndex = this.bgms.length - 1;
+
     this.effects = {
       chop: new Howl({ src: [choppingEffect], volume: 0.5 }),
       mine: new Howl({ src: [miningEffect], volume: 0.5 }),
