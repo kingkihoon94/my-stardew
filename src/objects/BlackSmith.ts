@@ -1,11 +1,11 @@
 import { Container } from '@pixi/display';
 import { Sprite } from '@pixi/sprite';
 
-import houseImage from '../assets/texture/house.png';
+import blackSmithImage from '../assets/texture/blackSmith.png';
 import { ObjectMap } from '../types/Object';
 import { TILE_SIZE } from '../constants';
 
-export class House {
+export class BlackSmith {
   public x: number;
   public y: number;
   public width: number;
@@ -21,18 +21,18 @@ export class House {
   public occupyMap(objectMap: ObjectMap): void {
     for (let row = this.y; row < this.y + this.height; row++) {
       for (let col = this.x; col < this.x + this.width; col++) {
-        objectMap[row][col] = { target: 'upper', type: 'House', sprite: null };
+        objectMap[row][col] = { target: 'upper', type: 'BlackSmith', sprite: null };
       }
     }
   }
 
   public draw(container: Container): void {
-    const sprite = Sprite.from(houseImage);
+    const sprite = Sprite.from(blackSmithImage);
     sprite.x = this.x * TILE_SIZE;
     sprite.y = this.y * TILE_SIZE;
     sprite.width = this.width * TILE_SIZE;
-    sprite.height = this.height * TILE_SIZE + 40;
-    sprite.anchor.set(0, 0.3); // 원하는 앵커 조정.
+    sprite.height = this.height * TILE_SIZE;
+    sprite.anchor.set(0, 0.1); // 원하는 앵커 조정.
 
     container.addChild(sprite);
   }

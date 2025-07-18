@@ -18,16 +18,20 @@ import {
   STAMINA_DIGGING, STAMINA_STONE, STAMINA_WATER, STAMINA_WATERING, STAMINA_WOOD
 } from '../constants';
 
+import { Tools } from '../types/Tools';
+
+type PlayerDirection = 'up' | 'down' | 'left' | 'right';
+
 export class Player {
   public sprite: Container;
   private babySprite: Sprite;
   private arrow: Graphics;
-  private lastDirection: 'up' | 'down' | 'left' | 'right' = 'down';
+  private lastDirection: PlayerDirection = 'down';
 
   public hp: number = 100;
   public stamina: number = 100;
   public water: number = 0;
-  public gold: number = 0;
+  public gold: number = 1000;
 
   public maxHp: number = 100;
   public maxStamina: number = 100;
@@ -41,8 +45,8 @@ export class Player {
   };
 
   public inventory: Record<string, number> = {
-    wood: 0,
-    stone: 0,
+    wood: 500,
+    stone: 500,
 
     springSeed: 0,
     summerSeed: 0,
@@ -53,11 +57,11 @@ export class Player {
     cherry: 0,
   };
 
-  public tools = {
-    hoe: 0,
-    axe: 0,
-    pickaxe: 0,
-    wateringCan: 0,
+  public tools: Tools = {
+    hoe: { level: 0, slots: [] },
+    axe: { level: 0, slots: [] },
+    pickaxe: { level: 0, slots: [] },
+    wateringCan: { level: 0, slots: [] },
   };
 
   public skills: {
@@ -170,12 +174,10 @@ export class Player {
     this.sprite.x = TILE_SIZE * 9;
     this.sprite.y = TILE_SIZE * 3;
     this.lastDirection = 'down';
-    this.updatePlayerFace(this.lastDirection);
+    this.updateDirectionArrow(this.lastDirection);
 
-    if (this.isExhausted) {
-      this.isExhausted = false;
-      this.stopExhaustedEffect();
-    }
+    this.isExhausted = false;
+    this.stopExhaustedEffect();
   }
 
 
@@ -261,6 +263,7 @@ export class Player {
       this.inventory.wood++;
       this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('chop');
+      this.farmScene.onShowInventory?.();
       return;
     }
 
@@ -276,12 +279,39 @@ export class Player {
       this.inventory.stone++;
       this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('mine');
+      this.farmScene.onShowInventory?.();
       return;
     }
 
-    // Market (상점)
+    // StrawBerry (딸기)
+    if (targetObject?.type === 'Strawberry') {
+      this.inventory.strawberry++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('success');
+      this.farmScene.onShowInventory?.();
+      return;
+    }
+
+    // Cherry (체리)
+    if (targetObject?.type === 'Cherry') {
+      this.inventory.cherry++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('success');
+      this.farmScene.onShowInventory?.();
+      return;
+    }
+
+    // Market (마켓)
     if (targetObject?.type === 'Market') {
       this.farmScene.onOpenMarket?.();
+      this.farmScene.onShowInventory?.();
+      return;
+    }
+
+    // BlackSmith (대장간)
+    if (targetObject?.type === 'BlackSmith') {
+      this.farmScene.onOpenBlackSmith?.();
+      this.farmScene.onShowInventory?.();
       return;
     }
 
@@ -391,21 +421,25 @@ export class Player {
     }
   }
 
-  private updateDirectionArrow(direction: 'up' | 'down' | 'left' | 'right'): void {
+  private updateDirectionArrow(direction: PlayerDirection): void {
     this.arrow.clear();
     this.arrow.beginFill(0xce0018, 0.5);
 
-    const size = 5;
-    const offset = 40;
-    let x = TILE_SIZE / 2;
-    let y = TILE_SIZE / 2;
+    const centerX = TILE_SIZE / 2;
+    const centerY = TILE_SIZE / 2;
+    const offset = 24;
 
-    if (direction === 'up') y += TILE_SIZE / 2 - offset;
-    if (direction === 'down') y -= TILE_SIZE / 2 - offset;
-    if (direction === 'left') x += TILE_SIZE / 2 - offset;
-    if (direction === 'right') x -= TILE_SIZE / 2 - offset;
+    let x = centerX;
+    let y = centerY;
 
-    this.arrow.drawCircle(x, y, size);
+    switch (direction) {
+      case 'up': y -= offset; break;
+      case 'down': y += offset; break;
+      case 'left': x -= offset; break;
+      case 'right': x += offset; break;
+    }
+
+    this.arrow.drawCircle(x, y, 5);
     this.arrow.endFill();
   }
 
@@ -413,23 +447,15 @@ export class Player {
     const col = nextX / this.tileSize;
     const row = nextY / this.tileSize;
 
-    if (row < 0 || row >= this.tileMap.length || col < 0 || col >= this.tileMap[0].length) {
-      return false;
-    }
+    if (
+      row < 0 || row >= this.tileMap.length ||
+      col < 0 || col >= this.tileMap[0].length
+    ) return false;
 
     const tile = this.tileMap[row][col];
     const object = this.objectMap[row][col];
 
-    // (1) 물이면 못감
-    if (tile === TileType.Water) {
-      return false;
-    }
-
-    // (2) 오브젝트가 없거나 있어도 lower 타입인 경우 통과 가능.
-    if (!object || object.target === 'lower') {
-      return true;
-    }
-    return false;
+    return tile !== TileType.Water && (!object || object.target === 'lower');
   }
 }
 

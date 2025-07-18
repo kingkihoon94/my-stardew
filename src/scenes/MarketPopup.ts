@@ -8,13 +8,6 @@ import { Player } from '../objects/Player';
 
 import { COST_SEED, COST_STONE, COST_WOOD } from '../constants';
 
-const toolNames: Record<string, string> = {
-  hoe: '괭이',
-  axe: '도끼',
-  pickaxe: '곡괭이',
-  wateringCan: '주전자'
-};
-
 export class MarketPopup extends Container {
 
   private player: Player;
@@ -50,70 +43,9 @@ export class MarketPopup extends Container {
     });
     this.addChild(exitBtn);
 
-    const tools = ['hoe', 'axe', 'pickaxe', 'wateringCan'] as const;
-
-    tools.forEach((tool, index) => {
-      const y = 80 + index * 60;
-      const buttonContainer = new Container();
-      buttonContainer.position.set(50, y);
-      buttonContainer.eventMode = 'static';
-      buttonContainer.cursor = 'pointer';
-      buttonContainer.on('pointerdown', () => {
-        this.attemptUpgradeTool(player, tool);
-      });
-
-      const bg = new Graphics();
-      bg.beginFill(0xeeeeee);
-      bg.drawRect(0, 0, 500, 40);
-      bg.endFill();
-      buttonContainer.addChild(bg);
-
-      const level = player.tools[tool];
-      const wood = 5 * (level + 1);
-      const stone = 5 * (level + 1);
-      const gold = 10 * (level + 1);
-
-      const hasEnoughWood = player.inventory.wood >= wood;
-      const hasEnoughStone = player.inventory.stone >= stone;
-      const hasEnoughGold = player.gold >= gold;
-
-      const textContainer = new Container();
-
-      const baseText = new Text(
-        `${toolNames[tool]} 업그레이드 Lv.${level} → Lv.${level + 1}  | `,
-        { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 }
-      );
-      textContainer.addChild(baseText);
-
-      const woodText = new Text(
-        `🌲 ${wood}`,
-        { fontFamily: 'Galmuri11', fontSize: 16, fill: hasEnoughWood ? 0x000000 : 0xff0000 }
-      );
-      woodText.x = baseText.width;
-      textContainer.addChild(woodText);
-
-      const stoneText = new Text(
-        `  🪨 ${stone}`,
-        { fontFamily: 'Galmuri11', fontSize: 16, fill: hasEnoughStone ? 0x000000 : 0xff0000 }
-      );
-      stoneText.x = baseText.width + woodText.width;
-      textContainer.addChild(stoneText);
-
-      const goldText = new Text(
-        `  💰 ${gold}`,
-        { fontFamily: 'Galmuri11', fontSize: 16, fill: hasEnoughGold ? 0x000000 : 0xff0000 }
-      );
-      goldText.x = baseText.width + woodText.width + stoneText.width;
-      textContainer.addChild(goldText);
-      textContainer.position.set(10, 10);
-
-      buttonContainer.addChild(textContainer);
-      this.addChild(buttonContainer);
-    });
-
     // 씨앗 구매 버튼
     const buySeedBtn = new Container();
-    buySeedBtn.position.set(50, 350);
+    buySeedBtn.position.set(50, 100);
     buySeedBtn.eventMode = 'static';
     buySeedBtn.cursor = 'pointer';
     buySeedBtn.on('pointerdown', () => {
@@ -122,11 +54,11 @@ export class MarketPopup extends Container {
 
     const seedBg = new Graphics();
     seedBg.beginFill(0xdddddd);
-    seedBg.drawRect(0, 0, 150, 40);
+    seedBg.drawRect(0, 0, 250, 40);
     seedBg.endFill();
     buySeedBtn.addChild(seedBg);
 
-    const seedText = new Text('🌱 씨앗 1개 구매', { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    const seedText = new Text(`🌱 씨앗 1개 구매 : ${COST_SEED} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
     seedText.position.set(10, 10);
     buySeedBtn.addChild(seedText);
 
@@ -134,7 +66,7 @@ export class MarketPopup extends Container {
 
     // 나무 판매 버튼
     const sellWoodBtn = new Container();
-    sellWoodBtn.position.set(225, 350);
+    sellWoodBtn.position.set(40, 350);
     sellWoodBtn.eventMode = 'static';
     sellWoodBtn.cursor = 'pointer';
     sellWoodBtn.on('pointerdown', () => {
@@ -143,11 +75,11 @@ export class MarketPopup extends Container {
 
     const woodBg = new Graphics();
     woodBg.beginFill(0xdddddd);
-    woodBg.drawRect(0, 0, 150, 40);
+    woodBg.drawRect(0, 0, 240, 40);
     woodBg.endFill();
     sellWoodBtn.addChild(woodBg);
 
-    const woodText = new Text('🌲 나무 1개 판매', { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    const woodText = new Text(`🌲 나무 1개 판매 : ${COST_WOOD} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
     woodText.position.set(10, 10);
     sellWoodBtn.addChild(woodText);
 
@@ -155,7 +87,7 @@ export class MarketPopup extends Container {
 
     // 돌 판매 버튼
     const sellStoneBtn = new Container();
-    sellStoneBtn.position.set(400, 350);
+    sellStoneBtn.position.set(330, 350);
     sellStoneBtn.eventMode = 'static';
     sellStoneBtn.cursor = 'pointer';
     sellStoneBtn.on('pointerdown', () => {
@@ -164,11 +96,11 @@ export class MarketPopup extends Container {
 
     const stoneBg = new Graphics();
     stoneBg.beginFill(0xdddddd);
-    stoneBg.drawRect(0, 0, 150, 40);
+    stoneBg.drawRect(0, 0, 240, 40);
     stoneBg.endFill();
     sellStoneBtn.addChild(stoneBg);
 
-    const stoneText = new Text('🪨 돌 1개 판매', { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    const stoneText = new Text(`🪨 돌 1개 판매 : ${COST_STONE} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
     stoneText.position.set(10, 10);
     sellStoneBtn.addChild(stoneText);
 
@@ -201,23 +133,6 @@ export class MarketPopup extends Container {
         SoundManager.playEffect('getCoin');
         this.refresh();
       }
-    }
-  }
-
-  private attemptUpgradeTool(player: Player, tool: 'hoe' | 'axe' | 'pickaxe' | 'wateringCan'): void {
-    const level = player.tools[tool];
-    const required = 5 * (level + 1);
-    if (
-      player.inventory.wood >= required &&
-      player.inventory.stone >= required &&
-      player.gold >= required * 2
-    ) {
-      player.inventory.wood -= required;
-      player.inventory.stone -= required;
-      player.gold -= required * 2;
-      player.tools[tool]++;
-      SoundManager.playEffect('levelUp');
-      this.refresh();
     }
   }
 

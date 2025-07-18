@@ -13,9 +13,10 @@ export class UiPanel extends Container {
   // 캐릭터 정보창 관련.
   private hpText: Text;
   private staminaText: Text;
+  private waterText: Text;
   private hoeLevelText: Text;
-  private axeLevelText: Text;
   private pickaxeLevelText: Text;
+  private axeLevelText: Text;
   private wateringCanLevelText: Text;
   private commonLevelText: Text;
   private woodLevelText: Text;
@@ -28,6 +29,9 @@ export class UiPanel extends Container {
   // 세팅창 관련.
   private settingText: Text;
 
+  // Tooltip
+  private tooltipText: Text;
+
   constructor(player: Player) {
     super();
     this.position.set(800, 0);
@@ -38,6 +42,15 @@ export class UiPanel extends Container {
     bg.endFill();
     this.addChild(bg);
 
+    this.tooltipText = new Text('', {
+      fontFamily: 'Galmuri11',
+      fontSize: 12,
+      fill: 0xff2222,
+    });
+    this.tooltipText.position.set(15, 250);
+    this.tooltipText.visible = false;
+    this.addChild(this.tooltipText);
+
     // ===== 캐릭터 정보 =====
     this.characterInfoContainer = new Container();
     const characterInfoTitle = new Text('캐릭터 정보', { fontFamily: 'Galmuri11', fontSize: 20, fill: 0x000000 });
@@ -47,10 +60,11 @@ export class UiPanel extends Container {
     this.commonLevelText = this.addText(20, 55, this.characterInfoContainer);
     this.hpText = this.addText(20, 85, this.characterInfoContainer);
     this.staminaText = this.addText(20, 115, this.characterInfoContainer);
-    this.hoeLevelText = this.addText(20, 360, this.characterInfoContainer);
-    this.axeLevelText = this.addText(20, 390, this.characterInfoContainer);
-    this.pickaxeLevelText = this.addText(20, 420, this.characterInfoContainer);
-    this.wateringCanLevelText = this.addText(20, 450, this.characterInfoContainer);
+    this.waterText = this.addText(20, 145, this.characterInfoContainer);
+    this.hoeLevelText = this.addText(15, 190, this.characterInfoContainer);
+    this.pickaxeLevelText = this.addText(110, 190, this.characterInfoContainer);
+    this.axeLevelText = this.addText(15, 220, this.characterInfoContainer);
+    this.wateringCanLevelText = this.addText(110, 220, this.characterInfoContainer);
     this.woodLevelText = this.addText(20, 500, this.characterInfoContainer);
     this.stoneLevelText = this.addText(20, 530, this.characterInfoContainer);
     this.farmLevelText = this.addText(20, 560, this.characterInfoContainer);
@@ -84,6 +98,8 @@ export class UiPanel extends Container {
   }
 
   public toggle(tab: 'character' | 'inventory' | 'setting'): void {
+    if (this.visibleTab === tab) return;
+
     this.visibleTab = tab;
     this.characterInfoContainer.visible = tab === 'character';
     this.inventoryContainer.visible = tab === 'inventory';
@@ -100,26 +116,32 @@ export class UiPanel extends Container {
 
   public updateCharacterInfo(player: Player): void {
     const skills = player.skills;
-    this.hpText.text = `체력: ${player.hp}`;
-    this.staminaText.text = `기력: ${player.stamina}`;
-    this.hoeLevelText.text = `괭이 Lv.${player.tools.hoe}`;
-    this.axeLevelText.text = `도끼 Lv.${player.tools.axe}`;
-    this.pickaxeLevelText.text = `곡괭이 Lv.${player.tools.pickaxe}`;
-    this.wateringCanLevelText.text = `물뿌리개 Lv.${player.tools.wateringCan}`;
+    this.hpText.text = `체력: ${player.hp} / ${player.maxHp}`;
+    this.staminaText.text = `기력: ${player.stamina} / ${player.maxStamina}`;
+    this.waterText.text = `물의 양: ${player.water} / ${player.maxWater}`;
+
+    this.hoeLevelText.text = `호미 Lv.${player.tools.hoe.level}`;
+    this.pickaxeLevelText.text = `곡괭이 Lv.${player.tools.pickaxe.level}`;
+    this.axeLevelText.text = `도끼 Lv.${player.tools.axe.level}`;
+    this.wateringCanLevelText.text = `주전자 Lv.${player.tools.wateringCan.level}`;
+
     this.commonLevelText.text = `Level ${skills.common.level} - ${skills.common.exp}/${skills.common.expToLevelUp}`;
     this.woodLevelText.text = `벌목 Level ${skills.wood.level} - ${skills.wood.exp}/${skills.wood.expToLevelUp}`;
     this.stoneLevelText.text = `채광 Level ${skills.stone.level} - ${skills.stone.exp}/${skills.stone.expToLevelUp}`;
     this.farmLevelText.text = `농사 Level ${skills.farm.level} - ${skills.farm.exp}/${skills.farm.expToLevelUp}`;
+
+    this.setHoverEvent(this.hoeLevelText, player.tools.hoe.slots);
+    this.setHoverEvent(this.pickaxeLevelText, player.tools.pickaxe.slots);
+    this.setHoverEvent(this.axeLevelText, player.tools.axe.slots);
+    this.setHoverEvent(this.wateringCanLevelText, player.tools.wateringCan.slots);
   }
 
   public updateInventoryInfo(player: Player): void {
-    // 이전 Text 지우기
     this.inventoryTexts.forEach((text) => {
       this.inventoryContainer.removeChild(text);
     });
     this.inventoryTexts = [];
 
-    // 새로 표시 (0 초과인 것만)
     let y = 60;
     Object.entries(player.inventory)
       .filter(([_, count]) => count > 0)
@@ -134,5 +156,23 @@ export class UiPanel extends Container {
         this.inventoryContainer.addChild(text);
         this.inventoryTexts.push(text);
       });
+  }
+
+  private setHoverEvent(textObj: Text, slots: (any | null)[]): void {
+    textObj.eventMode = 'static';
+    textObj.cursor = 'pointer';
+
+    textObj.on('pointerover', () => {
+      const content = slots
+        .filter((s) => s)
+        .map((s) => `${s.type} +${s.value}%`)
+        .join('\n\n') || '옵션 없음';
+      this.tooltipText.text = content;
+      this.tooltipText.visible = true;
+    });
+
+    textObj.on('pointerout', () => {
+      this.tooltipText.visible = false;
+    });
   }
 }

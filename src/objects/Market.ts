@@ -1,9 +1,8 @@
 import { Container } from '@pixi/display';
 import { Sprite } from '@pixi/sprite';
 
-import { ObjectMap } from '../types/Object';
-
 import marketImage from '../assets/texture/market.png';
+import { ObjectMap } from '../types/Object';
 import { TILE_SIZE } from '../constants';
 
 export class Market {

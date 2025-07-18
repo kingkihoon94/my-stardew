@@ -3,11 +3,16 @@ import { Container } from '@pixi/display';
 import { Graphics } from '@pixi/graphics';
 import { Text } from '@pixi/text';
 
+// 화면 구성 (농장 + UI 패널)
 import { FarmScene } from '../scenes/FarmScene';
 import { UiPanel } from '../scenes/UiPanel';
 
+// 사운드 매니저.
 import { SoundManager } from './SoundManager';
+
+// 팝업.
 import { MarketPopup } from '../scenes/MarketPopup';
+import { BlacksmithPopup } from '../scenes/BlackSmithPopup';
 
 export class App {
   public app: Application;
@@ -17,6 +22,7 @@ export class App {
   private dayText: Text;
   private isPopupActive: boolean = false;
   private marketPopup: MarketPopup | null = null;
+  private blackSmithPopup: BlacksmithPopup | null = null;
 
   constructor() {
     SoundManager.init();
@@ -36,6 +42,14 @@ export class App {
     this.farmScene.onOpenMarket = () => {
       this.showMarketPopup();
     };
+
+    this.farmScene.onOpenBlackSmith = () => {
+      this.showBlackSmithPopup();
+    };
+
+    this.farmScene.onShowInventory = () => {
+      this.uiPanel.toggle("inventory");
+    }
 
     this.uiPanel = new UiPanel(this.farmScene.player);
     this.app.stage.addChild(this.uiPanel);
@@ -134,6 +148,22 @@ export class App {
     if (!this.marketPopup) return;
     this.app.stage.removeChild(this.marketPopup);
     this.marketPopup = null;
+    this.isPopupActive = false;
+    this.farmScene.player.setIsPopupActive(false);
+  }
+
+  private showBlackSmithPopup(): void {
+    if (this.blackSmithPopup) return;
+    this.isPopupActive = true;
+    this.farmScene.player.setIsPopupActive(true);
+    this.blackSmithPopup = new BlacksmithPopup(this.farmScene.player, () => this.closeBlackSmithPopup());
+    this.app.stage.addChild(this.blackSmithPopup);
+  }
+
+  private closeBlackSmithPopup(): void {
+    if (!this.blackSmithPopup) return;
+    this.app.stage.removeChild(this.blackSmithPopup);
+    this.blackSmithPopup = null;
     this.isPopupActive = false;
     this.farmScene.player.setIsPopupActive(false);
   }

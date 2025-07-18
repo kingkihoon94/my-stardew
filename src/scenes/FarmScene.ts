@@ -20,6 +20,7 @@ import { House } from '../objects/House';
 import { Market } from '../objects/Market';
 import { StatusBar } from '../objects/StatusBar';
 import { Ticker } from '@pixi/core';
+import { BlackSmith } from '../objects/BlackSmith';
 
 export class FarmScene {
   // 컨테이너 Layer 관련.
@@ -35,7 +36,10 @@ export class FarmScene {
   // 건물 관련.
   private house: House;
   private market: Market;
+  private blackSmith: BlackSmith;
   public onOpenMarket?: () => void;
+  public onOpenBlackSmith?: () => void;
+  public onShowInventory?: () => void;
 
   // 맵 크기 관련.
   private cols: number = 25;
@@ -52,6 +56,7 @@ export class FarmScene {
   private toastQueue: string[] = [];
 
   // 골드 UI 관련.
+  private goldUnitText: Text;
   private goldText: Text;
 
   // 스테이터스 바 관련.
@@ -84,24 +89,32 @@ export class FarmScene {
     this.playerContainer.addChild(this.player.sprite);
 
     // 하우스 관련.
-    this.house = new House(7, 1, 5, 2);
+    this.house = new House(9, 1, 5, 2);
     this.house.occupyMap(this.objectMap);
     this.house.draw(this.upperObjectContainer);
 
     // 마켓 관련.
-    this.market = new Market(14, 1, 3, 2);
+    this.market = new Market(16, 1, 3, 2);
     this.market.occupyMap(this.objectMap);
     this.market.draw(this.upperObjectContainer);
 
+    // 대장간 관련.
+    this.blackSmith = new BlackSmith(5, 1, 2, 2);
+    this.blackSmith.occupyMap(this.objectMap);
+    this.blackSmith.draw(this.upperObjectContainer);
+
     // 토스트 알람 관련.
-    this.toastText = new Text('', { fontFamily: 'Galmuri11', fontSize: 18, fill: 0xff0000 });
+    this.toastText = new Text('', { fontFamily: 'Galmuri11', fontSize: 14, fill: 0xff0000 });
     this.toastText.position.set(20, 70);
     this.toastText.visible = false;
     this.uiContainer.addChild(this.toastText);
 
     // 골드 관련.
-    this.goldText = new Text('', { fontFamily: 'Galmuri11', fontSize: 15, fill: 0xffd700 });
-    this.goldText.position.set(650, 10);
+    this.goldUnitText = new Text('G', { fontFamily: 'Galmuri11', fontSize: 14, fill: 0xffd700 });
+    this.goldUnitText.position.set(675, 10);
+    this.uiContainer.addChild(this.goldUnitText);
+
+    this.goldText = new Text('', { fontFamily: 'Galmuri11', fontSize: 14, fill: 0xffd700 });
     this.uiContainer.addChild(this.goldText);
 
     // 스테이터스 바 관련.
@@ -375,7 +388,9 @@ export class FarmScene {
 
   /** 현재 골드 상태 UI 갱신 함수. */
   private updateGold(): void {
-    this.goldText.text = `${this.player.gold} G`;
+    const amount = this.player.gold;
+    this.goldText.text = amount.toString();
+    this.goldText.position.set(this.goldUnitText.x - this.goldText.width - 5, 10);
   }
 
   /** 다음 날로 갈때 계산해야 하는 것들 모음. */

@@ -3,7 +3,7 @@ import { Sprite } from "@pixi/sprite";
 export type SeedType = 'SpringSeed' | 'SummerSeed' | 'AutumnSeed' | 'WinterSeed';
 export type SproutType = 'Sprout';
 export type FruitType = 'Strawberry' | 'Cherry';
-export type BuildingType = 'House' | 'Market';
+export type BuildingType = 'House' | 'Market' | 'BlackSmith';
 export type ResourceType = 'Tree' | 'Stone';
 
 export type LowerObjectType = SeedType | SproutType;
