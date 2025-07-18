@@ -111,7 +111,7 @@ export type WateringCan = BaseTool<WateringCanOptionType>;
 export const HOE_OPTIONS: ToolOption<HoeOptionType>[] = [
   { type: '경작 스태미나 감소', min: 1, max: 1 },
   { type: '경작 스태미나 무소모 (%)', min: 10, max: 15 },
-  { type: '땅파다 돈을 획득 (%)', min: 20, max: 25 },
+  { type: '땅파다 돈을 획득 (%)', min: 15, max: 20 },
 ];
 
 export const AXE_OPTIONS: ToolOption<AxeOptionType>[] = [

@@ -160,5 +160,7 @@ export class App {
     this.blackSmithPopup = null;
     this.isPopupActive = false;
     this.farmScene.player.setIsPopupActive(false);
+    this.farmScene.player.updateToolEffectStats();
+    console.log("??? : ", this.farmScene.player.toolEffectStats);
   }
 }

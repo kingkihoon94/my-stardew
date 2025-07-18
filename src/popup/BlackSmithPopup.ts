@@ -161,6 +161,7 @@ export class BlacksmithPopup extends Container {
           levelUpTool(this.player.tools.wateringCan, WATERINGCAN_OPTIONS, (candidates, onSelect) => {
             this.showWateringCanOptionPopup(candidates, onSelect);
           });
+          this.player.maxWater += 2;
           break;
       }
       this.refresh();

@@ -18,9 +18,26 @@ import {
   STAMINA_DIGGING, STAMINA_STONE, STAMINA_WATER, STAMINA_WATERING, STAMINA_WOOD
 } from '../constants';
 
-import { Tools } from '../types/Tools';
+import { Tools, ToolSlot } from '../types/Tools';
 
 type PlayerDirection = 'up' | 'down' | 'left' | 'right';
+
+interface ToolEffectStats {
+  hoeStaminaReduce: number;
+  hoeNoCostRate: number;
+  hoeMoneyRate: number;
+  axeWoodBonusRate: number;
+  axeNoCostRate: number;
+  axeFailureRate: number;
+  pickaxeStoneBonusRate: number;
+  pickaxeNoCostRate: number;
+  pickaxeFailureRate: number;
+  wateringStaminaReduce: number;
+  wateringNoCostRate: number;
+  waterGatherReduce: number;
+  waterGatherBonusRate: number;
+}
+
 
 export class Player {
   public sprite: Container;
@@ -62,6 +79,22 @@ export class Player {
     axe: { level: 0, slots: [] },
     pickaxe: { level: 0, slots: [] },
     wateringCan: { level: 0, slots: [] },
+  };
+
+  public toolEffectStats: ToolEffectStats = {
+    hoeStaminaReduce: 0,
+    hoeNoCostRate: 0,
+    hoeMoneyRate: 0,
+    axeWoodBonusRate: 0,
+    axeNoCostRate: 0,
+    axeFailureRate: 0,
+    pickaxeStoneBonusRate: 0,
+    pickaxeNoCostRate: 0,
+    pickaxeFailureRate: 0,
+    wateringStaminaReduce: 0,
+    wateringNoCostRate: 0,
+    waterGatherReduce: 0,
+    waterGatherBonusRate: 0,
   };
 
   public skills: {
@@ -253,33 +286,62 @@ export class Player {
 
     // Tree (벌목)
     if (targetObject?.type === 'Tree') {
-      const stamina = Math.max(1, STAMINA_WOOD - ((this.skills.wood.level - 1) * this.skills.wood.staminaReducePerLevel));
+      const reduceByPassiveStamina = (this.skills.wood.level - 1) * this.skills.wood.staminaReducePerLevel;
+      let stamina = Math.max(1, STAMINA_WOOD - reduceByPassiveStamina);
       if (this.stamina < stamina) {
         SoundManager.playEffect('error');
         return;
       }
+
+      if ((Math.random() * 100) < this.toolEffectStats.axeNoCostRate) {
+        stamina = 0;
+      }
+
       this.stamina -= stamina;
       this.gainExp('wood', EXP_WOOD);
       this.inventory.wood++;
-      this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('chop');
-      this.farmScene.onShowInventory?.();
+
+      if ((Math.random() * 100) < this.toolEffectStats.axeWoodBonusRate) {
+        this.gainExp('wood', EXP_WOOD);
+        this.inventory.wood++;
+        SoundManager.playEffect('chop');
+      }
+
+      if ((Math.random() * 100) >= this.toolEffectStats.axeFailureRate) {
+        this.farmScene.updateObject(targetRow, targetCol, null);
+      }
       return;
     }
 
     // Stone (채광)
     if (targetObject?.type === 'Stone') {
-      const stamina = Math.max(1, STAMINA_STONE - ((this.skills.stone.level - 1) * this.skills.stone.staminaReducePerLevel));
+      const reduceByPassiveStamina = (this.skills.stone.level - 1) * this.skills.stone.staminaReducePerLevel;
+      let stamina = Math.max(1, STAMINA_STONE - reduceByPassiveStamina);
       if (this.stamina < stamina) {
         SoundManager.playEffect('error');
         return;
       }
+
+      if ((Math.random() * 100) < this.toolEffectStats.pickaxeNoCostRate) {
+        stamina = 0;
+      }
+
       this.stamina -= stamina;
       this.gainExp('stone', EXP_STONE);
       this.inventory.stone++;
-      this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('mine');
-      this.farmScene.onShowInventory?.();
+
+      if ((Math.random() * 100) < this.toolEffectStats.pickaxeStoneBonusRate) {
+        this.gainExp('stone', EXP_STONE);
+        this.inventory.stone++;
+        SoundManager.playEffect('mine');
+      }
+
+      if ((Math.random() * 100) >= this.toolEffectStats.pickaxeFailureRate) {
+        this.farmScene.updateObject(targetRow, targetCol, null);
+      }
+
       return;
     }
 
@@ -288,7 +350,6 @@ export class Player {
       this.inventory.strawberry++;
       this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('success');
-      this.farmScene.onShowInventory?.();
       return;
     }
 
@@ -297,7 +358,6 @@ export class Player {
       this.inventory.cherry++;
       this.farmScene.updateObject(targetRow, targetCol, null);
       SoundManager.playEffect('success');
-      this.farmScene.onShowInventory?.();
       return;
     }
 
@@ -317,29 +377,46 @@ export class Player {
 
     // Water (물 뜨기)
     if (targetTile === TileType.Water) {
-      if (this.stamina < STAMINA_WATER) {
-        SoundManager.playEffect('error');
-        return;
-      }
-      this.stamina -= STAMINA_WATER;
-      this.water++;
-      SoundManager.playEffect('water');
-      return;
-    }
-
-    // Soil (경작)
-    if (targetTile === TileType.Soil) {
-      const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
-      const stamina = Math.max(1, STAMINA_DIGGING - reduceStamina);
+      const stamina = Math.min(1, STAMINA_WATER - this.toolEffectStats.waterGatherReduce);
       if (this.stamina < stamina) {
         SoundManager.playEffect('error');
         return;
       }
       this.stamina -= stamina;
+      this.water++;
+      SoundManager.playEffect('water');
+      if ((Math.random() * 100) < this.toolEffectStats.waterGatherBonusRate) {
+        this.water++;
+        SoundManager.playEffect('water');
+      }
+      return;
+    }
+
+    // Soil (경작)
+    if (targetTile === TileType.Soil) {
+      const reduceByPassiveStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
+      const reduceByToolStamina = this.toolEffectStats.hoeStaminaReduce;
+      let stamina = Math.max(1, STAMINA_DIGGING - reduceByPassiveStamina - reduceByToolStamina);
+      if (this.stamina < stamina) {
+        SoundManager.playEffect('error');
+        return;
+      }
+
+      if ((Math.random() * 100) < this.toolEffectStats.hoeNoCostRate) {
+        stamina = 0;
+      }
+
+      this.stamina -= stamina;
       this.tileMap[targetRow][targetCol] = TileType.Tilled;
       this.gainExp('farm', EXP_DIGGING);
       this.farmScene.drawTile(targetRow, targetCol);
       SoundManager.playEffect('dig');
+
+      if ((Math.random() * 100) < this.toolEffectStats.hoeMoneyRate) {
+        this.gold++;
+        SoundManager.playEffect('getCoin');
+      }
+
       return;
     }
 
@@ -349,12 +426,18 @@ export class Player {
         SoundManager.playEffect('error');
         return;
       }
-      const reduceStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
-      const stamina = Math.max(1, STAMINA_WATERING - reduceStamina);
+      const reduceByPassiveStamina = Math.floor((this.skills.farm.level - 1) / 2) * this.skills.farm.staminaReducePerLevel;
+      const reduceByToolStamina = this.toolEffectStats.wateringStaminaReduce;
+      let stamina = Math.max(1, STAMINA_WATERING - reduceByPassiveStamina - reduceByToolStamina);
       if (this.stamina < stamina) {
         SoundManager.playEffect('error');
         return;
       }
+
+      if ((Math.random() * 100) < this.toolEffectStats.wateringNoCostRate) {
+        stamina = 0;
+      }
+
       this.stamina -= stamina;
       this.water--;
       this.tileMap[targetRow][targetCol] = TileType.Watered;
@@ -457,5 +540,61 @@ export class Player {
 
     return tile !== TileType.Water && (!object || object.target === 'lower');
   }
+
+  public updateToolEffectStats(): void {
+    this.toolEffectStats = {
+      hoeStaminaReduce: 0,
+      hoeNoCostRate: 0,
+      hoeMoneyRate: 0,
+      axeWoodBonusRate: 0,
+      axeNoCostRate: 0,
+      axeFailureRate: 0,
+      pickaxeStoneBonusRate: 0,
+      pickaxeNoCostRate: 0,
+      pickaxeFailureRate: 0,
+      wateringStaminaReduce: 0,
+      wateringNoCostRate: 0,
+      waterGatherReduce: 0,
+      waterGatherBonusRate: 0,
+    };
+
+    this.aggregateToolSlots(this.tools.hoe.slots, {
+      '경작 스태미나 감소': (v) => (this.toolEffectStats.hoeStaminaReduce += v),
+      '경작 스태미나 무소모 (%)': (v) => (this.toolEffectStats.hoeNoCostRate += v),
+      '땅파다 돈을 획득 (%)': (v) => (this.toolEffectStats.hoeMoneyRate += v),
+    });
+
+    this.aggregateToolSlots(this.tools.axe.slots, {
+      '나무 추가 획득 (%)': (v) => (this.toolEffectStats.axeWoodBonusRate += v),
+      '벌목 스태미나 무소모 (%)': (v) => (this.toolEffectStats.axeNoCostRate += v),
+      '나무 파괴 무효 (%)': (v) => (this.toolEffectStats.axeFailureRate += v),
+    });
+
+    this.aggregateToolSlots(this.tools.pickaxe.slots, {
+      '돌 추가 획득 (%)': (v) => (this.toolEffectStats.pickaxeStoneBonusRate += v),
+      '채광 스태미나 무소모 (%)': (v) => (this.toolEffectStats.pickaxeNoCostRate += v),
+      '돌 파괴 무효 (%)': (v) => (this.toolEffectStats.pickaxeFailureRate += v),
+    });
+
+    this.aggregateToolSlots(this.tools.wateringCan.slots, {
+      '물주기 스태미나 소모 감소': (v) => (this.toolEffectStats.wateringStaminaReduce += v),
+      '물주기 스태미나 무소모 (%)': (v) => (this.toolEffectStats.wateringNoCostRate += v),
+      '물퍼기 스태미나 소모 감소': (v) => (this.toolEffectStats.waterGatherReduce += v),
+      '물퍼기 시 추가 획득 (%)': (v) => (this.toolEffectStats.waterGatherBonusRate += v),
+    });
+  }
+
+  private aggregateToolSlots<T extends string>(
+    slots: (ToolSlot<T> | null)[],
+    effects: Record<string, (value: number) => void>
+  ): void {
+    slots.forEach((slot) => {
+      if (slot) {
+        const apply = effects[slot.type];
+        if (apply) apply(slot.value);
+      }
+    });
+  }
+
 }
 
