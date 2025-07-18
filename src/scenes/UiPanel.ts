@@ -165,7 +165,7 @@ export class UiPanel extends Container {
     textObj.on('pointerover', () => {
       const content = slots
         .filter((s) => s)
-        .map((s) => `${s.type} +${s.value}%`)
+        .map((s) => `${s.type} +${s.value}`)
         .join('\n\n') || '옵션 없음';
       this.tooltipText.text = content;
       this.tooltipText.visible = true;

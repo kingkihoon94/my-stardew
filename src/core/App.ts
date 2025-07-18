@@ -11,48 +11,38 @@ import { UiPanel } from '../scenes/UiPanel';
 import { SoundManager } from './SoundManager';
 
 // 팝업.
-import { MarketPopup } from '../scenes/MarketPopup';
-import { BlacksmithPopup } from '../scenes/BlackSmithPopup';
+import { MarketPopup } from '../popup/MarketPopup';
+import { BlacksmithPopup } from '../popup/BlackSmithPopup';
 
 export class App {
   public app: Application;
   private farmScene: FarmScene;
   private uiPanel: UiPanel;
+
   private day: number = 1;
   private dayText: Text;
   private isPopupActive: boolean = false;
+
   private marketPopup: MarketPopup | null = null;
   private blackSmithPopup: BlacksmithPopup | null = null;
+
+  private popupLayer: Container;
 
   constructor() {
     SoundManager.init();
 
-    this.app = new Application({
-      width: 1000,
-      height: 608,
-      backgroundColor: '#ffffff'
-    });
+    this.app = new Application({ width: 1000, height: 608, backgroundColor: '#ffffff' });
     document.body.appendChild(this.app.view as HTMLCanvasElement);
 
     const farmContainer = new Container();
     this.app.stage.addChild(farmContainer);
-
     this.farmScene = new FarmScene(farmContainer);
-
-    this.farmScene.onOpenMarket = () => {
-      this.showMarketPopup();
-    };
-
-    this.farmScene.onOpenBlackSmith = () => {
-      this.showBlackSmithPopup();
-    };
-
-    this.farmScene.onShowInventory = () => {
-      this.uiPanel.toggle("inventory");
-    }
 
     this.uiPanel = new UiPanel(this.farmScene.player);
     this.app.stage.addChild(this.uiPanel);
+
+    this.popupLayer = new Container();
+    this.app.stage.addChild(this.popupLayer);
 
     this.dayText = new Text(`Day ${this.day}`, {
       fontFamily: 'Galmuri11',
@@ -61,6 +51,10 @@ export class App {
     });
     this.dayText.position.set(20, 20);
     this.app.stage.addChild(this.dayText);
+
+    this.farmScene.onOpenMarket = () => this.showMarketPopup();
+    this.farmScene.onOpenBlackSmith = () => this.showBlackSmithPopup();
+    this.farmScene.onShowInventory = () => this.uiPanel.toggle("inventory");
 
     this.app.ticker.add(() => {
       this.uiPanel.update(this.farmScene.player);
@@ -72,27 +66,27 @@ export class App {
 
     window.addEventListener('keydown', (e) => {
       if (this.isPopupActive) return;
-
-      if (e.key === 'Enter') {
-        this.showSleepPopup();
-      }
-
+      if (e.key === 'Enter') this.showSleepPopup();
       if (e.key === 'Tab') {
         e.preventDefault();
-        if (this.uiPanel.visibleTab === 'character') {
-          this.uiPanel.toggle('inventory');
-        } else if (this.uiPanel.visibleTab === 'inventory') {
-          this.uiPanel.toggle('setting');
-        } else {
-          this.uiPanel.toggle('character');
-        }
+        this.toggleTab();
       }
     });
+  }
+
+  private toggleTab() {
+    const next = this.uiPanel.visibleTab === 'character'
+      ? 'inventory'
+      : this.uiPanel.visibleTab === 'inventory'
+        ? 'setting'
+        : 'character';
+    this.uiPanel.toggle(next);
   }
 
   private showSleepPopup(): void {
     this.isPopupActive = true;
     this.farmScene.player.setIsPopupActive(true);
+
     const popup = new Container();
     popup.position.set(300, 200);
 
@@ -116,7 +110,7 @@ export class App {
       this.day += 1;
       this.dayText.text = `Day ${this.day}`;
       this.farmScene.player.resetPosition();
-      this.app.stage.removeChild(popup);
+      this.popupLayer.removeChild(popup);
       this.isPopupActive = false;
       this.farmScene.player.setIsPopupActive(false);
     });
@@ -127,13 +121,13 @@ export class App {
     noBtn.eventMode = 'static';
     noBtn.cursor = 'pointer';
     noBtn.on('pointerdown', () => {
-      this.app.stage.removeChild(popup);
+      this.popupLayer.removeChild(popup);
       this.isPopupActive = false;
       this.farmScene.player.setIsPopupActive(false);
     });
     popup.addChild(noBtn);
 
-    this.app.stage.addChild(popup);
+    this.popupLayer.addChild(popup);
   }
 
   private showMarketPopup(): void {
@@ -141,12 +135,12 @@ export class App {
     this.isPopupActive = true;
     this.farmScene.player.setIsPopupActive(true);
     this.marketPopup = new MarketPopup(this.farmScene.player, () => this.closeMarketPopup());
-    this.app.stage.addChild(this.marketPopup);
+    this.popupLayer.addChild(this.marketPopup);
   }
 
   private closeMarketPopup(): void {
     if (!this.marketPopup) return;
-    this.app.stage.removeChild(this.marketPopup);
+    this.popupLayer.removeChild(this.marketPopup);
     this.marketPopup = null;
     this.isPopupActive = false;
     this.farmScene.player.setIsPopupActive(false);
@@ -156,13 +150,13 @@ export class App {
     if (this.blackSmithPopup) return;
     this.isPopupActive = true;
     this.farmScene.player.setIsPopupActive(true);
-    this.blackSmithPopup = new BlacksmithPopup(this.farmScene.player, () => this.closeBlackSmithPopup());
-    this.app.stage.addChild(this.blackSmithPopup);
+    this.blackSmithPopup = new BlacksmithPopup(this.farmScene.player, this.popupLayer, () => this.closeBlackSmithPopup());
+    this.popupLayer.addChild(this.blackSmithPopup);
   }
 
   private closeBlackSmithPopup(): void {
     if (!this.blackSmithPopup) return;
-    this.app.stage.removeChild(this.blackSmithPopup);
+    this.popupLayer.removeChild(this.blackSmithPopup);
     this.blackSmithPopup = null;
     this.isPopupActive = false;
     this.farmScene.player.setIsPopupActive(false);

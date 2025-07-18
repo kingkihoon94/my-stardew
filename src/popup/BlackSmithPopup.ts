@@ -2,9 +2,10 @@ import { Container } from '@pixi/display';
 import { Graphics } from '@pixi/graphics';
 import { Text } from '@pixi/text';
 import { Player } from '../objects/Player';
-import { SoundManager } from '../core/SoundManager';
-import { levelUpTool } from '../types/Tools';
+import { AxeOptionType, HoeOptionType, levelUpTool, PickaxeOptionType, ToolSlot, WateringCanOptionType, } from '../types/Tools';
 import { HOE_OPTIONS, AXE_OPTIONS, PICKAXE_OPTIONS, WATERINGCAN_OPTIONS } from '../types/Tools';
+import { ToolOptionSelectPopup } from './ToolOptionSelectPopup';
+import { SoundManager } from '../core/SoundManager';
 
 const toolNames: Record<string, string> = {
   hoe: '호미',
@@ -15,12 +16,15 @@ const toolNames: Record<string, string> = {
 
 export class BlacksmithPopup extends Container {
   private player: Player;
+  private popupLayer: Container;
+  private toolOptionPopup: Container | null = null;
   private onClose: () => void;
 
-  constructor(player: Player, onClose: () => void) {
+  constructor(player: Player, popupLayer: Container, onClose: () => void) {
     super();
     this.position.set(200, 100);
     this.player = player;
+    this.popupLayer = popupLayer;
     this.onClose = onClose;
     this.buildUI();
   }
@@ -135,23 +139,77 @@ export class BlacksmithPopup extends Container {
 
       switch (tool) {
         case 'hoe':
-          levelUpTool(this.player.tools.hoe, HOE_OPTIONS);
+          SoundManager.playEffect('levelUp');
+          levelUpTool(this.player.tools.hoe, HOE_OPTIONS, (candidates, onSelect) => {
+            this.showHoeOptionPopup(candidates, onSelect);
+          });
           break;
         case 'axe':
-          levelUpTool(this.player.tools.axe, AXE_OPTIONS);
+          SoundManager.playEffect('levelUp');
+          levelUpTool(this.player.tools.axe, AXE_OPTIONS, (candidates, onSelect) => {
+            this.showAxeOptionPopup(candidates, onSelect);
+          });
           break;
         case 'pickaxe':
-          levelUpTool(this.player.tools.pickaxe, PICKAXE_OPTIONS);
+          SoundManager.playEffect('levelUp');
+          levelUpTool(this.player.tools.pickaxe, PICKAXE_OPTIONS, (candidates, onSelect) => {
+            this.showPickaxeOptionPopup(candidates, onSelect);
+          });
           break;
         case 'wateringCan':
-          levelUpTool(this.player.tools.wateringCan, WATERINGCAN_OPTIONS);
+          SoundManager.playEffect('levelUp');
+          levelUpTool(this.player.tools.wateringCan, WATERINGCAN_OPTIONS, (candidates, onSelect) => {
+            this.showWateringCanOptionPopup(candidates, onSelect);
+          });
           break;
       }
-
-      SoundManager.playEffect('levelUp');
       this.refresh();
     }
   }
+
+  private showHoeOptionPopup(options: ToolSlot<HoeOptionType>[], onSelect: (selected: ToolSlot<HoeOptionType>) => void) {
+    this.toolOptionPopup = new ToolOptionSelectPopup<HoeOptionType>(options, (selected) => {
+      this.closeOptionPopup();
+      onSelect(selected);
+      this.refresh();
+    });
+    this.popupLayer.addChild(this.toolOptionPopup);
+  }
+
+  private showAxeOptionPopup(options: ToolSlot<AxeOptionType>[], onSelect: (selected: ToolSlot<AxeOptionType>) => void) {
+    this.toolOptionPopup = new ToolOptionSelectPopup<AxeOptionType>(options, (selected) => {
+      this.closeOptionPopup();
+      onSelect(selected);
+      this.refresh();
+    });
+    this.popupLayer.addChild(this.toolOptionPopup);
+  }
+
+  private showPickaxeOptionPopup(options: ToolSlot<PickaxeOptionType>[], onSelect: (selected: ToolSlot<PickaxeOptionType>) => void) {
+    this.toolOptionPopup = new ToolOptionSelectPopup<PickaxeOptionType>(options, (selected) => {
+      this.closeOptionPopup();
+      onSelect(selected);
+      this.refresh();
+    });
+    this.popupLayer.addChild(this.toolOptionPopup);
+  }
+
+  private showWateringCanOptionPopup(options: ToolSlot<WateringCanOptionType>[], onSelect: (selected: ToolSlot<WateringCanOptionType>) => void) {
+    this.toolOptionPopup = new ToolOptionSelectPopup<WateringCanOptionType>(options, (selected) => {
+      this.closeOptionPopup();
+      onSelect(selected);
+      this.refresh();
+    });
+    this.popupLayer.addChild(this.toolOptionPopup);
+  }
+
+  private closeOptionPopup(): void {
+    if (this.toolOptionPopup) {
+      this.popupLayer.removeChild(this.toolOptionPopup);
+      this.toolOptionPopup = null;
+    }
+  }
+
 
   private refresh(): void {
     this.removeChildren();

@@ -23,6 +23,17 @@ export interface BaseTool<T extends string> {
   slots: (ToolSlot<T> | null)[];
 }
 
+export function getRandomToolOptions<T extends string>(
+  options: ToolOption<T>[],
+  count: number = 3
+): ToolSlot<T>[] {
+  const result: ToolSlot<T>[] = [];
+  for (let i = 0; i < count; i++) {
+    result.push(getRandomToolOption(options));
+  }
+  return result;
+}
+
 export function getRandomToolOption<T extends string>(
   options: ToolOption<T>[]
 ): ToolSlot<T> {
@@ -34,21 +45,30 @@ export function getRandomToolOption<T extends string>(
 
 export function levelUpTool<T extends string>(
   tool: BaseTool<T>,
-  options: ToolOption<T>[]
+  options: ToolOption<T>[],
+  onOptionSelect: (candidates: ToolSlot<T>[], onSelect: (selected: ToolSlot<T>) => void) => void
 ) {
   const prevLevel = tool.level;
-  tool.level = Math.min(tool.level + 1, 10);
+  tool.level = Math.min(tool.level + 1, 5); // 방어 코드.
   const availableSlots = tool.level;
-
   const newSlots: (ToolSlot<T> | null)[] = tool.slots.slice(0, availableSlots);
 
-  // 새로 열린 슬롯에 랜덤 옵션 부여
-  for (let i = prevLevel; i < availableSlots; i++) {
-    newSlots[i] = getRandomToolOption(options);
-  }
+  if (prevLevel < availableSlots) {
+    const candidates = [
+      getRandomToolOption(options),
+      getRandomToolOption(options),
+      getRandomToolOption(options),
+    ];
 
-  tool.slots = newSlots;
+    onOptionSelect(candidates, (selectedOption) => {
+      newSlots[availableSlots - 1] = selectedOption;
+      tool.slots = newSlots;
+    });
+  } else {
+    tool.slots = newSlots;
+  }
 }
+
 
 export function rerollToolSlot<T extends string>(
   tool: BaseTool<T>,
@@ -62,24 +82,24 @@ export function rerollToolSlot<T extends string>(
 
 export type HoeOptionType =
   | '경작 스태미나 감소'
-  | '경작 스태미나 무소모 확률'
-  | '땅파다 돈을 획득할 확률';
+  | '경작 스태미나 무소모 (%)'
+  | '땅파다 돈을 획득 (%)';
 
 export type AxeOptionType =
-  | '나무 추가 획득 확률'
-  | '벌목 스태미나 무소모 확률'
-  | '나무 파괴 무효 확률';
+  | '나무 추가 획득 (%)'
+  | '벌목 스태미나 무소모 (%)'
+  | '나무 파괴 무효 (%)';
 
 export type PickaxeOptionType =
-  | '돌 추가 획득 확률'
-  | '채광 스태미나 무소모 확률'
-  | '돌 파괴 무효 확률';
+  | '돌 추가 획득 (%)'
+  | '채광 스태미나 무소모 (%)'
+  | '돌 파괴 무효 (%)';
 
 export type WateringCanOptionType =
   | '물주기 스태미나 소모 감소'
-  | '물주기 스태미나 무소모 확률'
+  | '물주기 스태미나 무소모 (%)'
   | '물퍼기 스태미나 소모 감소'
-  | '물퍼기 시 추가 획득 확률';
+  | '물퍼기 시 추가 획득 (%)';
 
 export type Hoe = BaseTool<HoeOptionType>;
 export type Axe = BaseTool<AxeOptionType>;
@@ -90,25 +110,25 @@ export type WateringCan = BaseTool<WateringCanOptionType>;
 
 export const HOE_OPTIONS: ToolOption<HoeOptionType>[] = [
   { type: '경작 스태미나 감소', min: 1, max: 1 },
-  { type: '경작 스태미나 무소모 확률', min: 5, max: 10 },
-  { type: '땅파다 돈을 획득할 확률', min: 5, max: 10 },
+  { type: '경작 스태미나 무소모 (%)', min: 10, max: 15 },
+  { type: '땅파다 돈을 획득 (%)', min: 20, max: 25 },
 ];
 
 export const AXE_OPTIONS: ToolOption<AxeOptionType>[] = [
-  { type: '나무 추가 획득 확률', min: 0, max: 5 },
-  { type: '벌목 스태미나 무소모 확률', min: 5, max: 10 },
-  { type: '나무 파괴 무효 확률', min: 10, max: 20 },
+  { type: '나무 추가 획득 (%)', min: 10, max: 15 },
+  { type: '벌목 스태미나 무소모 (%)', min: 10, max: 15 },
+  { type: '나무 파괴 무효 (%)', min: 10, max: 15 },
 ];
 
 export const PICKAXE_OPTIONS: ToolOption<PickaxeOptionType>[] = [
-  { type: '돌 추가 획득 확률', min: 0, max: 5 },
-  { type: '채광 스태미나 무소모 확률', min: 5, max: 10 },
-  { type: '돌 파괴 무효 확률', min: 10, max: 20 },
+  { type: '돌 추가 획득 (%)', min: 10, max: 15 },
+  { type: '채광 스태미나 무소모 (%)', min: 10, max: 15 },
+  { type: '돌 파괴 무효 (%)', min: 10, max: 15 },
 ];
 
 export const WATERINGCAN_OPTIONS: ToolOption<WateringCanOptionType>[] = [
   { type: '물주기 스태미나 소모 감소', min: 1, max: 1 },
-  { type: '물주기 스태미나 무소모 확률', min: 5, max: 10 },
+  { type: '물주기 스태미나 무소모 (%)', min: 10, max: 15 },
   { type: '물퍼기 스태미나 소모 감소', min: 1, max: 1 },
-  { type: '물퍼기 시 추가 획득 확률', min: 10, max: 20 },
+  { type: '물퍼기 시 추가 획득 (%)', min: 15, max: 20 },
 ];
