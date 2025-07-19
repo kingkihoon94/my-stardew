@@ -48,7 +48,7 @@ export class Player {
   public hp: number = 100;
   public stamina: number = 100;
   public water: number = 0;
-  public gold: number = 50;
+  public gold: number = 5000;
 
   public maxHp: number = 100;
   public maxStamina: number = 100;
@@ -62,8 +62,8 @@ export class Player {
   };
 
   public inventory: Record<string, number> = {
-    wood: 0,
-    stone: 0,
+    wood: 500,
+    stone: 500,
 
     springSeed: 0,
     summerSeed: 0,
@@ -300,13 +300,12 @@ export class Player {
       this.stamina -= stamina;
       this.gainExp('wood', EXP_WOOD);
       this.inventory.wood++;
-      SoundManager.playEffect('chop');
 
       if ((Math.random() * 100) < this.toolEffectStats.axeWoodBonusRate) {
         this.gainExp('wood', EXP_WOOD);
         this.inventory.wood++;
-        SoundManager.playEffect('chop');
-      }
+        SoundManager.playEffect('bonus');
+      } else SoundManager.playEffect('chop');
 
       if ((Math.random() * 100) >= this.toolEffectStats.axeFailureRate) {
         this.farmScene.updateObject(targetRow, targetCol, null);
@@ -335,8 +334,8 @@ export class Player {
       if ((Math.random() * 100) < this.toolEffectStats.pickaxeStoneBonusRate) {
         this.gainExp('stone', EXP_STONE);
         this.inventory.stone++;
-        SoundManager.playEffect('mine');
-      }
+        SoundManager.playEffect('bonus');
+      } else SoundManager.playEffect('mine');
 
       if ((Math.random() * 100) >= this.toolEffectStats.pickaxeFailureRate) {
         this.farmScene.updateObject(targetRow, targetCol, null);
@@ -349,7 +348,7 @@ export class Player {
     if (targetObject?.type === 'Strawberry') {
       this.inventory.strawberry++;
       this.farmScene.updateObject(targetRow, targetCol, null);
-      SoundManager.playEffect('success');
+      SoundManager.playEffect('bonus');
       return;
     }
 
@@ -357,7 +356,7 @@ export class Player {
     if (targetObject?.type === 'Cherry') {
       this.inventory.cherry++;
       this.farmScene.updateObject(targetRow, targetCol, null);
-      SoundManager.playEffect('success');
+      SoundManager.playEffect('bonus');
       return;
     }
 
@@ -384,11 +383,12 @@ export class Player {
       }
       this.stamina -= stamina;
       this.water++;
-      SoundManager.playEffect('water');
+
       if ((Math.random() * 100) < this.toolEffectStats.waterGatherBonusRate) {
         this.water++;
-        SoundManager.playEffect('water');
-      }
+        SoundManager.playEffect('bonus');
+      } else SoundManager.playEffect('water');
+
       return;
     }
 
@@ -410,12 +410,11 @@ export class Player {
       this.tileMap[targetRow][targetCol] = TileType.Tilled;
       this.gainExp('farm', EXP_DIGGING);
       this.farmScene.drawTile(targetRow, targetCol);
-      SoundManager.playEffect('dig');
 
       if ((Math.random() * 100) < this.toolEffectStats.hoeMoneyRate) {
         this.gold++;
         SoundManager.playEffect('getCoin');
-      }
+      } else SoundManager.playEffect('dig');
 
       return;
     }

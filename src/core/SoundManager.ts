@@ -15,6 +15,8 @@ import successEffect from '../assets/soundEffect/success.mp3';
 import errorEffect from '../assets/soundEffect/error.mp3';
 import exhaustedEffect from '../assets/soundEffect/exhausted.mp3';
 import seedEffect from '../assets/soundEffect/seed.wav';
+import bonusEffect from '../assets/soundEffect/bonus.wav';
+import byebyeEffect from '../assets/soundEffect/byebye.wav';
 
 export class SoundManager {
   private static bgms: Howl[];
@@ -34,11 +36,13 @@ export class SoundManager {
       water: new Howl({ src: [wateringEffect], volume: 0.5 }),
       dig: new Howl({ src: [diggingEffect], volume: 0.5 }),
       getCoin: new Howl({ src: [getCoinEffect], volume: 0.1 }),
-      levelUp: new Howl({ src: [levelUpEffect], volume: 0.3 }),
+      levelUp: new Howl({ src: [levelUpEffect], volume: 0.2 }),
       success: new Howl({ src: [successEffect], volume: 0.1 }),
       error: new Howl({ src: [errorEffect], volume: 0.4 }),
       exhausted: new Howl({ src: [exhaustedEffect], volume: 0.5 }),
       seed: new Howl({ src: [seedEffect], volume: 0.6 }),
+      bonus: new Howl({ src: [bonusEffect], volume: 0.6 }),
+      byebye: new Howl({ src: [byebyeEffect], volume: 0.4 }),
     };
     this.playNextBGM();
   }

@@ -8,4 +8,6 @@ export type SoundEffect =
   | 'success'
   | 'error'
   | 'exhausted'
-  | 'seed';
+  | 'seed'
+  | 'bonus'
+  | 'byebye';

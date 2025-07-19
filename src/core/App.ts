@@ -14,19 +14,36 @@ import { SoundManager } from './SoundManager';
 import { MarketPopup } from '../popup/MarketPopup';
 import { BlacksmithPopup } from '../popup/BlackSmithPopup';
 
+enum Season {
+  Spring = '\u00A0봄',
+  Summer = '여름',
+  Autumn = '가을',
+  Winter = '겨울'
+}
+
+const DAY_PER_SEASON = 28;
+
 export class App {
   public app: Application;
   private farmScene: FarmScene;
   private uiPanel: UiPanel;
 
-  private day: number = 1;
+  private seasons = [Season.Spring, Season.Summer, Season.Autumn, Season.Winter];
+  private seasonIndex: number = 0;
+
+  private season: Season = Season.Spring;
+  private seasonText: Text;
+
+  private day: number = 28;
   private dayText: Text;
+
   private isPopupActive: boolean = false;
 
   private marketPopup: MarketPopup | null = null;
   private blackSmithPopup: BlacksmithPopup | null = null;
 
   private popupLayer: Container;
+  private blackOverlay: Graphics;
 
   constructor() {
     SoundManager.init();
@@ -44,12 +61,20 @@ export class App {
     this.popupLayer = new Container();
     this.app.stage.addChild(this.popupLayer);
 
+    this.seasonText = new Text(`${this.season}`, {
+      fontFamily: 'Galmuri11',
+      fontSize: 20,
+      fill: 0x000000,
+    });
+    this.seasonText.position.set(20, 20);
+    this.app.stage.addChild(this.seasonText);
+
     this.dayText = new Text(`Day ${this.day}`, {
       fontFamily: 'Galmuri11',
       fontSize: 20,
       fill: 0x000000,
     });
-    this.dayText.position.set(20, 20);
+    this.dayText.position.set(65, 20);
     this.app.stage.addChild(this.dayText);
 
     this.farmScene.onOpenMarket = () => this.showMarketPopup();
@@ -60,6 +85,14 @@ export class App {
     this.app.ticker.add(() => {
       this.uiPanel.update(this.farmScene.player);
     });
+
+    this.blackOverlay = new Graphics();
+    this.blackOverlay.beginFill(0x000000);
+    this.blackOverlay.drawRect(0, 0, this.app.screen.width, this.app.screen.height);
+    this.blackOverlay.endFill();
+    this.blackOverlay.alpha = 0;
+    this.blackOverlay.eventMode = 'none';
+    this.app.stage.addChild(this.blackOverlay);
 
     this.app.stage.eventMode = 'static';
     this.app.stage.hitArea = this.app.screen;
@@ -106,14 +139,9 @@ export class App {
     yesBtn.eventMode = 'static';
     yesBtn.cursor = 'pointer';
     yesBtn.on('pointerdown', () => {
-      this.farmScene.player.sleep();
-      this.farmScene.nextDaySimulate();
-      this.day += 1;
-      this.dayText.text = `Day ${this.day}`;
-      this.farmScene.player.resetPosition();
-      this.popupLayer.removeChild(popup);
-      this.isPopupActive = false;
       this.farmScene.player.setIsPopupActive(false);
+      this.popupLayer.removeChild(popup);
+      this.sleepTransition();
     });
     popup.addChild(yesBtn);
 
@@ -122,9 +150,9 @@ export class App {
     noBtn.eventMode = 'static';
     noBtn.cursor = 'pointer';
     noBtn.on('pointerdown', () => {
+      this.farmScene.player.setIsPopupActive(false);
       this.popupLayer.removeChild(popup);
       this.isPopupActive = false;
-      this.farmScene.player.setIsPopupActive(false);
     });
     popup.addChild(noBtn);
 
@@ -162,6 +190,69 @@ export class App {
     this.isPopupActive = false;
     this.farmScene.player.setIsPopupActive(false);
     this.farmScene.player.updateToolEffectStats();
-    console.log("??? : ", this.farmScene.player.toolEffectStats);
+  }
+
+  // 예시 사용: 슬립 전환
+  private async sleepTransition() {
+    SoundManager.playEffect('byebye');
+    await this.fadeIn(1); // 1초 동안 점점 검게
+    await new Promise((r) => setTimeout(r, 250));
+    this.farmScene.player.sleep();
+    this.farmScene.player.resetPosition();
+    this.farmScene.nextDaySimulate();
+    this.updateSeasonAndDay();
+    this.isPopupActive = false;
+    this.farmScene.player.setIsPopupActive(false);
+    await new Promise((r) => setTimeout(r, 250));
+    await this.fadeOut(1); // 1초 동안 점점 밝아짐
+  }
+
+  // 페이드 인 함수 (점점 검게)
+  private fadeIn(duration: number): Promise<void> {
+    return new Promise((resolve) => {
+      let elapsed = 0;
+
+      const tick = (delta: number) => {
+        elapsed += delta / this.app.ticker.maxFPS;
+        this.blackOverlay.alpha = Math.min(elapsed / duration, 1);
+        if (this.blackOverlay.alpha >= 1) {
+          this.app.ticker.remove(tick);
+          resolve();
+        }
+      };
+
+      this.app.ticker.add(tick);
+    });
+  }
+
+  // 페이드 아웃 함수 (점점 밝게)
+  private fadeOut(duration: number): Promise<void> {
+    return new Promise((resolve) => {
+      let elapsed = 0;
+
+      const tick = (delta: number) => {
+        elapsed += delta / this.app.ticker.maxFPS;
+        this.blackOverlay.alpha = Math.max(1 - (elapsed / duration), 0);
+        if (this.blackOverlay.alpha <= 0) {
+          this.app.ticker.remove(tick);
+          resolve();
+        }
+      };
+
+      this.app.ticker.add(tick);
+    });
+  }
+
+  private updateSeasonAndDay(): void {
+    if (this.day >= DAY_PER_SEASON) {
+      this.day = 1;
+      this.seasonIndex = (this.seasonIndex + 1) % this.seasons.length;
+      this.season = this.seasons[this.seasonIndex];
+    } else {
+      this.day += 1;
+    }
+
+    this.dayText.text = `Day ${this.day}`;
+    this.seasonText.text = `${this.season}`;
   }
 }
