@@ -48,7 +48,7 @@ export class Player {
   public hp: number = 100;
   public stamina: number = 100;
   public water: number = 0;
-  public gold: number = 1000;
+  public gold: number = 50;
 
   public maxHp: number = 100;
   public maxStamina: number = 100;
@@ -62,8 +62,8 @@ export class Player {
   };
 
   public inventory: Record<string, number> = {
-    wood: 500,
-    stone: 500,
+    wood: 0,
+    stone: 0,
 
     springSeed: 0,
     summerSeed: 0,
@@ -487,6 +487,7 @@ export class Player {
   public showExhaustedEffect(): void {
     let direction = -1;
     this.exhaustedTicker = new Ticker();
+    this.exhaustedTicker.maxFPS = 60;
     this.exhaustedTicker.add(() => {
       this.sprite.alpha += 0.05 * direction;
       if (this.sprite.alpha <= 0.5) direction = 1;

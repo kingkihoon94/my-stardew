@@ -56,6 +56,7 @@ export class App {
     this.farmScene.onOpenBlackSmith = () => this.showBlackSmithPopup();
     this.farmScene.onShowInventory = () => this.uiPanel.toggle("inventory");
 
+    this.app.ticker.maxFPS = 60;
     this.app.ticker.add(() => {
       this.uiPanel.update(this.farmScene.player);
     });

@@ -132,6 +132,7 @@ export class FarmScene {
 
     // Ticker 관련.
     this.ticker = new Ticker();
+    this.ticker.maxFPS = 60;
     this.ticker.add(this.update.bind(this));
     this.ticker.start();
   }
