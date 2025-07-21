@@ -4,19 +4,22 @@ import { Graphics } from '@pixi/graphics';
 
 import { SoundManager } from '../core/SoundManager';
 
-import { Player } from '../objects/Player';
+import { InventoryItem, Player } from '../objects/Player';
 
 import { COST_SEED, COST_STONE, COST_WOOD } from '../constants';
+import { Season } from '../core/App';
 
 export class MarketPopup extends Container {
 
   private player: Player;
+  private season: Season;
   private onClose: () => void;
 
-  constructor(player: Player, onClose: () => void) {
+  constructor(player: Player, season: Season, onClose: () => void,) {
     super();
     this.position.set(200, 100);
     this.player = player;
+    this.season = season;
     this.onClose = onClose;
     this.buildUI(player, onClose);
   }
@@ -43,26 +46,21 @@ export class MarketPopup extends Container {
     });
     this.addChild(exitBtn);
 
-    // 씨앗 구매 버튼
-    const buySeedBtn = new Container();
-    buySeedBtn.position.set(50, 100);
-    buySeedBtn.eventMode = 'static';
-    buySeedBtn.cursor = 'pointer';
-    buySeedBtn.on('pointerdown', () => {
-      this.attemptBuyItem(player, 'seed');
-    });
+    switch (this.season) {
+      case Season.Spring:
+        this.setSpringMarket(this.player);
+        break;
+      case Season.Summer:
+        this.setSummerMarket(this.player);
+        break;
+      case Season.Autumn:
+        this.setAutumnMarket(this.player);
+        break;
+      case Season.Winter:
+        this.setWinterMarket(this.player);
+        break;
+    }
 
-    const seedBg = new Graphics();
-    seedBg.beginFill(0xdddddd);
-    seedBg.drawRect(0, 0, 250, 40);
-    seedBg.endFill();
-    buySeedBtn.addChild(seedBg);
-
-    const seedText = new Text(`🌱 씨앗 1개 구매 : ${COST_SEED} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
-    seedText.position.set(10, 10);
-    buySeedBtn.addChild(seedText);
-
-    this.addChild(buySeedBtn);
 
     // 나무 판매 버튼
     const sellWoodBtn = new Container();
@@ -107,16 +105,128 @@ export class MarketPopup extends Container {
     this.addChild(sellStoneBtn);
   }
 
-  private attemptBuyItem(player: Player, item: 'seed'): void {
-    if (item === 'seed') {
-      if (player.gold >= COST_SEED) {
-        player.gold -= COST_SEED;
-        player.inventory.springSeed++;;
-        SoundManager.playEffect('success');
-        this.refresh();
-      }
+  /** 봄 시즌 마켓 구매 목록 */
+  private setSpringMarket(player: Player): void {
+    // 봄 씨앗 구매 버튼
+    const buySeedBtn = new Container();
+    buySeedBtn.position.set(50, 100);
+    buySeedBtn.eventMode = 'static';
+    buySeedBtn.cursor = 'pointer';
+    buySeedBtn.on('pointerdown', () => {
+      this.attemptBuyItem(player, 'springSeed');
+    });
+
+    const seedBg = new Graphics();
+    seedBg.beginFill(0xdddddd);
+    seedBg.drawRect(0, 0, 400, 40);
+    seedBg.endFill();
+    buySeedBtn.addChild(seedBg);
+
+    const seedText = new Text(`🌱 봄 씨앗 1개 구매 : ${COST_SEED} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    seedText.position.set(10, 10);
+    buySeedBtn.addChild(seedText);
+
+    this.addChild(buySeedBtn);
+  }
+
+  /** 여름 시즌 마켓 구매 목록 */
+  private setSummerMarket(player: Player): void {
+    // 여름 씨앗 구매 버튼
+    const buySeedBtn = new Container();
+    buySeedBtn.position.set(50, 100);
+    buySeedBtn.eventMode = 'static';
+    buySeedBtn.cursor = 'pointer';
+    buySeedBtn.on('pointerdown', () => {
+      this.attemptBuyItem(player, 'summerSeed');
+    });
+
+    const seedBg = new Graphics();
+    seedBg.beginFill(0xdddddd);
+    seedBg.drawRect(0, 0, 400, 40);
+    seedBg.endFill();
+    buySeedBtn.addChild(seedBg);
+
+    const seedText = new Text(`🌱 여름 씨앗 1개 구매 : ${COST_SEED} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    seedText.position.set(10, 10);
+    buySeedBtn.addChild(seedText);
+
+    this.addChild(buySeedBtn);
+  }
+
+  /** 가을 시즌 마켓 구매 목록 */
+  private setAutumnMarket(player: Player): void {
+    // 가을 씨앗 구매 버튼
+    const buySeedBtn = new Container();
+    buySeedBtn.position.set(50, 100);
+    buySeedBtn.eventMode = 'static';
+    buySeedBtn.cursor = 'pointer';
+    buySeedBtn.on('pointerdown', () => {
+      this.attemptBuyItem(player, 'autumnSeed');
+    });
+
+    const seedBg = new Graphics();
+    seedBg.beginFill(0xdddddd);
+    seedBg.drawRect(0, 0, 400, 40);
+    seedBg.endFill();
+    buySeedBtn.addChild(seedBg);
+
+    const seedText = new Text(`🌱 가을 씨앗 1개 구매 : ${COST_SEED} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    seedText.position.set(10, 10);
+    buySeedBtn.addChild(seedText);
+
+    this.addChild(buySeedBtn);
+  }
+
+  /** 겨울 시즌 마켓 구매 목록 */
+  private setWinterMarket(player: Player): void {
+    // 겨울 씨앗 구매 버튼
+    const buySeedBtn = new Container();
+    buySeedBtn.position.set(50, 100);
+    buySeedBtn.eventMode = 'static';
+    buySeedBtn.cursor = 'pointer';
+    buySeedBtn.on('pointerdown', () => {
+      this.attemptBuyItem(player, 'winterSeed');
+    });
+
+    const seedBg = new Graphics();
+    seedBg.beginFill(0xdddddd);
+    seedBg.drawRect(0, 0, 400, 40);
+    seedBg.endFill();
+    buySeedBtn.addChild(seedBg);
+
+    const seedText = new Text(`🌱 겨울 씨앗 1개 구매 : ${COST_SEED} Gold`, { fontFamily: 'Galmuri11', fontSize: 16, fill: 0x000000 });
+    seedText.position.set(10, 10);
+    buySeedBtn.addChild(seedText);
+
+    this.addChild(buySeedBtn);
+  }
+
+  private getItemCost(item: InventoryItem): number {
+    switch (item) {
+      case 'springSeed':
+      case 'summerSeed':
+      case 'autumnSeed':
+      case 'winterSeed':
+        return COST_SEED;
+      case 'wood':
+        return COST_WOOD;
+      case 'stone':
+        return COST_STONE;
+
+      default: return 0;
     }
   }
+
+  private attemptBuyItem(player: Player, item: InventoryItem): void {
+    const cost = this.getItemCost(item);
+    if (player.gold >= cost) {
+      player.gold -= cost;
+      player.inventory[item]++;;
+      SoundManager.playEffect('success');
+      this.refresh();
+    }
+  }
+
 
   private attemptSellItem(player: Player, item: 'wood' | 'stone'): void {
     if (item === 'wood') {

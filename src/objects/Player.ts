@@ -20,6 +20,25 @@ import {
 
 import { Tools, ToolSlot } from '../types/Tools';
 
+export const INVENTORY_TEMPLATE = {
+  wood: 0,
+  stone: 0,
+  springSeed: 0,
+  summerSeed: 0,
+  autumnSeed: 0,
+  winterSeed: 0,
+  strawberry: 0,
+  cherry: 0,
+  watermelon: 0,
+  corn: 0,
+  raspberry: 0,
+  peach: 0,
+  kiwi: 0,
+  orange: 0
+} as const;
+
+export type InventoryItem = keyof typeof INVENTORY_TEMPLATE;
+
 type PlayerDirection = 'up' | 'down' | 'left' | 'right';
 
 interface ToolEffectStats {
@@ -61,18 +80,7 @@ export class Player {
     farm: '농사'
   };
 
-  public inventory: Record<string, number> = {
-    wood: 500,
-    stone: 500,
-
-    springSeed: 0,
-    summerSeed: 0,
-    autumnSeed: 0,
-    winterSeed: 0,
-
-    strawberry: 0,
-    cherry: 0,
-  };
+  public inventory: Record<InventoryItem, number> = { ...INVENTORY_TEMPLATE };
 
   public tools: Tools = {
     hoe: { level: 0, slots: [] },

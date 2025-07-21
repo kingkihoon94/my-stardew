@@ -14,14 +14,14 @@ import { SoundManager } from './SoundManager';
 import { MarketPopup } from '../popup/MarketPopup';
 import { BlacksmithPopup } from '../popup/BlackSmithPopup';
 
-enum Season {
+const DAY_PER_SEASON = 28;
+
+export enum Season {
   Spring = '\u00A0봄',
   Summer = '여름',
   Autumn = '가을',
   Winter = '겨울'
 }
-
-const DAY_PER_SEASON = 28;
 
 export class App {
   public app: Application;
@@ -163,7 +163,7 @@ export class App {
     if (this.marketPopup) return;
     this.isPopupActive = true;
     this.farmScene.player.setIsPopupActive(true);
-    this.marketPopup = new MarketPopup(this.farmScene.player, () => this.closeMarketPopup());
+    this.marketPopup = new MarketPopup(this.farmScene.player, this.season, () => this.closeMarketPopup());
     this.popupLayer.addChild(this.marketPopup);
   }
 
