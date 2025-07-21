@@ -422,6 +422,7 @@ export class FarmScene {
       const targetContainer = object.target === 'upper' ? this.upperObjectContainer : this.lowerObjectContainer;
       if (object.sprite) {
         targetContainer.removeChild(object.sprite);
+        object.sprite.destroy();
       }
     }
 
