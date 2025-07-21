@@ -8,7 +8,7 @@ import { SoundManager } from '../core/SoundManager';
 
 import { TileType } from '../types/Tile';
 import { CommonSkill, SpecializedSkill } from '../types/Skill';
-import { ObjectMap } from '../types/Object';
+import { ObjectMap, SeedType } from '../types/Object';
 
 import babyImage from '../assets/texture/baby.png';
 
@@ -19,14 +19,15 @@ import {
 } from '../constants';
 
 import { Tools, ToolSlot } from '../types/Tools';
+import { Season } from '../core/App';
 
 export const INVENTORY_TEMPLATE = {
-  wood: 0,
-  stone: 0,
-  springSeed: 0,
-  summerSeed: 0,
-  autumnSeed: 0,
-  winterSeed: 0,
+  wood: 50,
+  stone: 50,
+  SpringSeed: 0,
+  SummerSeed: 0,
+  AutumnSeed: 0,
+  WinterSeed: 0,
   strawberry: 0,
   cherry: 0,
   watermelon: 0,
@@ -67,11 +68,13 @@ export class Player {
   public hp: number = 100;
   public stamina: number = 100;
   public water: number = 0;
-  public gold: number = 5000;
+  public gold: number = 200;
 
   public maxHp: number = 100;
   public maxStamina: number = 100;
   public maxWater: number = 10;
+
+  private season: Season = Season.Spring;
 
   private skillNames: Record<string, string> = {
     common: '캐릭터',
@@ -167,6 +170,10 @@ export class Player {
     window.addEventListener('keydown', (e) => {
       this.handleKey(e);
     });
+  }
+
+  public setSeason(season: Season): void {
+    this.season = season;
   }
 
 
@@ -368,6 +375,54 @@ export class Player {
       return;
     }
 
+    // Watermelon (수박)
+    if (targetObject?.type === 'Watermelon') {
+      this.inventory.watermelon++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('bonus');
+      return;
+    }
+
+    // Corn (콘)
+    if (targetObject?.type === 'Corn') {
+      this.inventory.corn++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('bonus');
+      return;
+    }
+
+    // Raspberry (라즈베리)
+    if (targetObject?.type === 'Raspberry') {
+      this.inventory.raspberry++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('bonus');
+      return;
+    }
+
+    // Peach (복숭아)
+    if (targetObject?.type === 'Peach') {
+      this.inventory.peach++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('bonus');
+      return;
+    }
+
+    // Kiwi (키위)
+    if (targetObject?.type === 'Kiwi') {
+      this.inventory.kiwi++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('bonus');
+      return;
+    }
+
+    // Orange (오렌지)
+    if (targetObject?.type === 'Orange') {
+      this.inventory.orange++;
+      this.farmScene.updateObject(targetRow, targetCol, null);
+      SoundManager.playEffect('bonus');
+      return;
+    }
+
     // Market (마켓)
     if (targetObject?.type === 'Market') {
       this.farmScene.onOpenMarket?.();
@@ -455,9 +510,19 @@ export class Player {
     }
   }
 
-  /** 씨앗 뿌리기. */
+  /** 봄 씨앗 뿌리기. */
   private performSeed(): void {
-    if (this.inventory.springSeed <= 0) {
+
+    let seedKey: string = 'SpringSeed';
+    if (this.season === Season.Summer) {
+      seedKey = 'SummerSeed';
+    } else if (this.season === Season.Autumn) {
+      seedKey = 'AutumnSeed';
+    } else if (this.season === Season.Winter) {
+      seedKey = 'WinterSeed';
+    }
+
+    if (this.inventory[seedKey as InventoryItem] <= 0) {
       SoundManager.playEffect('error');
       return;
     }
@@ -480,16 +545,14 @@ export class Player {
       return;
     }
 
-    // 현재 타일이 경작 가능한 상태인지 확인 (예: 2 = 경작됨, 3 = 물 줌 가능)
     if (this.tileMap[targetRow][targetCol] === TileType.Tilled || this.tileMap[targetRow][targetCol] === TileType.Watered) {
-      this.inventory.springSeed--;
-      this.farmScene.updateObject(targetRow, targetCol, 'SpringSeed');
+      this.inventory[seedKey as InventoryItem]--;
+      this.farmScene.updateObject(targetRow, targetCol, seedKey as SeedType);
       SoundManager.playEffect('seed');
     } else {
       SoundManager.playEffect('error');
     }
   }
-
 
   public showExhaustedEffect(): void {
     let direction = -1;

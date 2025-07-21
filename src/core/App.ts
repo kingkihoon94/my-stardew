@@ -14,7 +14,7 @@ import { SoundManager } from './SoundManager';
 import { MarketPopup } from '../popup/MarketPopup';
 import { BlacksmithPopup } from '../popup/BlackSmithPopup';
 
-const DAY_PER_SEASON = 28;
+const DAY_PER_SEASON = 10;
 
 export enum Season {
   Spring = '\u00A0봄',
@@ -34,7 +34,7 @@ export class App {
   private season: Season = Season.Spring;
   private seasonText: Text;
 
-  private day: number = 28;
+  private day: number = 1;
   private dayText: Text;
 
   private isPopupActive: boolean = false;
@@ -248,6 +248,7 @@ export class App {
       this.day = 1;
       this.seasonIndex = (this.seasonIndex + 1) % this.seasons.length;
       this.season = this.seasons[this.seasonIndex];
+      this.farmScene.setNewSeasonMap(this.season);
     } else {
       this.day += 1;
     }

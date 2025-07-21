@@ -113,7 +113,7 @@ export class MarketPopup extends Container {
     buySeedBtn.eventMode = 'static';
     buySeedBtn.cursor = 'pointer';
     buySeedBtn.on('pointerdown', () => {
-      this.attemptBuyItem(player, 'springSeed');
+      this.attemptBuyItem(player, 'SpringSeed');
     });
 
     const seedBg = new Graphics();
@@ -137,7 +137,7 @@ export class MarketPopup extends Container {
     buySeedBtn.eventMode = 'static';
     buySeedBtn.cursor = 'pointer';
     buySeedBtn.on('pointerdown', () => {
-      this.attemptBuyItem(player, 'summerSeed');
+      this.attemptBuyItem(player, 'SummerSeed');
     });
 
     const seedBg = new Graphics();
@@ -161,7 +161,7 @@ export class MarketPopup extends Container {
     buySeedBtn.eventMode = 'static';
     buySeedBtn.cursor = 'pointer';
     buySeedBtn.on('pointerdown', () => {
-      this.attemptBuyItem(player, 'autumnSeed');
+      this.attemptBuyItem(player, 'AutumnSeed');
     });
 
     const seedBg = new Graphics();
@@ -185,7 +185,7 @@ export class MarketPopup extends Container {
     buySeedBtn.eventMode = 'static';
     buySeedBtn.cursor = 'pointer';
     buySeedBtn.on('pointerdown', () => {
-      this.attemptBuyItem(player, 'winterSeed');
+      this.attemptBuyItem(player, 'WinterSeed');
     });
 
     const seedBg = new Graphics();
@@ -203,10 +203,10 @@ export class MarketPopup extends Container {
 
   private getItemCost(item: InventoryItem): number {
     switch (item) {
-      case 'springSeed':
-      case 'summerSeed':
-      case 'autumnSeed':
-      case 'winterSeed':
+      case 'SpringSeed':
+      case 'SummerSeed':
+      case 'AutumnSeed':
+      case 'WinterSeed':
         return COST_SEED;
       case 'wood':
         return COST_WOOD;
@@ -221,7 +221,7 @@ export class MarketPopup extends Container {
     const cost = this.getItemCost(item);
     if (player.gold >= cost) {
       player.gold -= cost;
-      player.inventory[item]++;;
+      player.inventory[item]++;
       SoundManager.playEffect('success');
       this.refresh();
     }

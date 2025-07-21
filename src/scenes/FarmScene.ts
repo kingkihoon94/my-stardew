@@ -5,7 +5,7 @@ import { Text } from '@pixi/text';
 
 import { Player } from '../objects/Player';
 import { TileType } from '../types/Tile';
-import { FruitType, ObjectCell, ObjectMap, ObjectType } from '../types/Object';
+import { FruitType, ObjectCell, ObjectMap, ObjectType, SeedType, SproutType } from '../types/Object';
 
 import treeImage from '../assets/texture/tree.png';
 import stoneImage from '../assets/texture/stone.png';
@@ -14,6 +14,12 @@ import seedImage from '../assets/texture/seed.png';
 import sproutImage from '../assets/texture/sprout.png';
 import strawberryImage from '../assets/texture/spring_strawberry.png';
 import cherryImage from "../assets/texture/spring_cherry.png";
+import watermelonImage from "../assets/texture/summer_watermelon.png";
+import cornImage from "../assets/texture/summer_corn.png";
+import raspberryImage from "../assets/texture/autumn_raspberry.png";
+import peachImage from "../assets/texture/autumn_peach.png";
+import kiwiImage from "../assets/texture/winter_kiwi.png";
+import orangeImage from "../assets/texture/winter_orange.png";
 
 import { TILE_SIZE } from '../constants';
 import { House } from '../objects/House';
@@ -21,6 +27,19 @@ import { Market } from '../objects/Market';
 import { StatusBar } from '../objects/StatusBar';
 import { Ticker } from '@pixi/core';
 import { BlackSmith } from '../objects/BlackSmith';
+import { Season } from '../core/App';
+
+function isSeed(type: string): type is SeedType {
+  return ['SpringSeed', 'SummerSeed', 'AutumnSeed', 'WinterSeed'].includes(type);
+}
+
+function isSprout(type: string): type is SproutType {
+  return ['SpringSprout', 'SummerSprout', 'AutumnSprout', 'WinterSprout'].includes(type);
+}
+
+function isFruit(type: string): type is FruitType {
+  return ['Strawberry', 'Cherry', 'Watermelon', 'Corn', 'Raspberry', 'Peach', 'Kiwi', 'Orange'].includes(type);
+}
 
 export class FarmScene {
   // 컨테이너 Layer 관련.
@@ -195,6 +214,32 @@ export class FarmScene {
     }
   }//end generateMap.
 
+  public setNewSeasonMap(season: Season): void {
+    for (let row = 0; row < this.rows; row++) {
+      for (let col = 0; col < this.cols; col++) {
+        const tileType = this.tileMap[row][col];
+        const object = this.objectMap[row][col];
+
+        if (object) {
+          // 씨앗, 과일 리셋.
+          if (object.target === 'lower' || isFruit(object.type)) {
+            this.updateObject(row, col, null);
+          }
+        } else {
+          if (tileType === TileType.Soil) {
+            if (Math.random() < 0.1) {
+              this.updateObject(row, col, 'Tree');
+            } else if (Math.random() < 0.1) {
+              this.updateObject(row, col, 'Stone');
+            }
+          }
+        }
+      }
+    }
+
+    this.player.setSeason(season); // 플레이어에게 시즌 정보 넘기기.
+  }
+
   /** 맵 전체를 타일 유형에 맞게 그리는 함수 */
   private drawTiles(): void {
     for (let row = 0; row < this.rows; row++) {
@@ -243,7 +288,7 @@ export class FarmScene {
       sprite.scale.set(0.014, 0.025); // 필요에 따라 조정, 비율 유지
       targetContainer.addChild(sprite);
       object.sprite = sprite;
-    } else if (object.type === 'SpringSeed') {
+    } else if (isSeed(object.type)) {
       const sprite = Sprite.from(seedImage);
       sprite.x = col * TILE_SIZE;
       sprite.y = row * TILE_SIZE;
@@ -251,7 +296,7 @@ export class FarmScene {
       sprite.height = TILE_SIZE;
       targetContainer.addChild(sprite);
       object.sprite = sprite;
-    } else if (object.type === 'Sprout') {
+    } else if (isSprout(object.type)) {
       const sprite = Sprite.from(sproutImage);
       sprite.x = col * TILE_SIZE;
       sprite.y = row * TILE_SIZE;
@@ -275,7 +320,56 @@ export class FarmScene {
       sprite.height = TILE_SIZE;
       targetContainer.addChild(sprite);
       object.sprite = sprite;
+    } else if (object.type === 'Watermelon') {
+      const sprite = Sprite.from(watermelonImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Corn') {
+      const sprite = Sprite.from(cornImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Raspberry') {
+      const sprite = Sprite.from(raspberryImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Peach') {
+      const sprite = Sprite.from(peachImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Kiwi') {
+      const sprite = Sprite.from(kiwiImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
+    } else if (object.type === 'Orange') {
+      const sprite = Sprite.from(orangeImage);
+      sprite.x = col * TILE_SIZE;
+      sprite.y = row * TILE_SIZE;
+      sprite.width = TILE_SIZE;
+      sprite.height = TILE_SIZE;
+      targetContainer.addChild(sprite);
+      object.sprite = sprite;
     }
+
   }
 
   /** Ticker 를 통해 매번 갱신해줘야 하는 함수 모음. */
@@ -331,17 +425,44 @@ export class FarmScene {
       }
     }
 
+    if (!item) {
+      this.objectMap[row][col] = null;
+      return;
+    }
+
     if (item === 'SpringSeed') {
-      this.objectMap[row][col] = { target: 'lower', type: 'SpringSeed', sprite: null, data: { dayCnt: 0, duration: 3 } };
+      this.objectMap[row][col] = { target: 'lower', type: 'SpringSeed', sprite: null, data: { dayCnt: 0, duration: 2 } };
       this.drawObject(row, col);
-    } else if (item === 'Sprout') {
-      this.objectMap[row][col] = { target: 'lower', type: 'Sprout', sprite: null, data: { dayCnt: 0, duration: 4 } };
+    } else if (item === 'SummerSeed') {
+      this.objectMap[row][col] = { target: 'lower', type: 'SummerSeed', sprite: null, data: { dayCnt: 0, duration: 2 } };
       this.drawObject(row, col);
-    } else if (item === 'Strawberry') {
-      this.updateFruitObject(row, col, 'Strawberry');
-    } else if (item === 'Cherry') {
-      this.updateFruitObject(row, col, 'Cherry');
-    } else this.objectMap[row][col] = null;
+    } else if (item === 'AutumnSeed') {
+      this.objectMap[row][col] = { target: 'lower', type: 'AutumnSeed', sprite: null, data: { dayCnt: 0, duration: 2 } };
+      this.drawObject(row, col);
+    } else if (item === 'WinterSeed') {
+      this.objectMap[row][col] = { target: 'lower', type: 'WinterSeed', sprite: null, data: { dayCnt: 0, duration: 2 } };
+      this.drawObject(row, col);
+    } else if (item === 'SpringSprout') {
+      this.objectMap[row][col] = { target: 'lower', type: 'SpringSprout', sprite: null, data: { dayCnt: 0, duration: 2 } };
+      this.drawObject(row, col);
+    } else if (item === 'SummerSprout') {
+      this.objectMap[row][col] = { target: 'lower', type: 'SummerSprout', sprite: null, data: { dayCnt: 0, duration: 2 } };
+      this.drawObject(row, col);
+    } else if (item === 'AutumnSprout') {
+      this.objectMap[row][col] = { target: 'lower', type: 'AutumnSprout', sprite: null, data: { dayCnt: 0, duration: 2 } };
+      this.drawObject(row, col);
+    } else if (item === 'WinterSprout') {
+      this.objectMap[row][col] = { target: 'lower', type: 'WinterSprout', sprite: null, data: { dayCnt: 0, duration: 2 } };
+      this.drawObject(row, col);
+    } else if (item === 'Tree') {
+      this.objectMap[row][col] = { target: 'upper', type: 'Tree', sprite: null };
+      this.drawObject(row, col);
+    } else if (item === 'Stone') {
+      this.objectMap[row][col] = { target: 'upper', type: 'Stone', sprite: null };
+      this.drawObject(row, col);
+    } else if (isFruit(item)) {
+      this.updateFruitObject(row, col, item);
+    }
   }
 
   /** 특정 row, col 에 과일(열매) 채우는 함수. */
@@ -417,9 +538,24 @@ export class FarmScene {
         if (object.data.dayCnt < object.data.duration) continue;
 
         if (object.type === 'SpringSeed') {
-          this.updateObject(row, col, 'Sprout');
-        } else if (object.type === 'Sprout') {
+          this.updateObject(row, col, 'SpringSprout');
+        } else if (object.type === 'SpringSprout') {
           const fruit = Math.random() < 0.3 ? 'Strawberry' : 'Cherry';
+          this.updateObject(row, col, fruit);
+        } else if (object.type === 'SummerSeed') {
+          this.updateObject(row, col, 'SummerSprout');
+        } else if (object.type === 'SummerSprout') {
+          const fruit = Math.random() < 0.3 ? 'Watermelon' : 'Corn';
+          this.updateObject(row, col, fruit);
+        } else if (object.type === 'AutumnSeed') {
+          this.updateObject(row, col, 'AutumnSprout');
+        } else if (object.type === 'AutumnSprout') {
+          const fruit = Math.random() < 0.3 ? 'Raspberry' : 'Peach';
+          this.updateObject(row, col, fruit);
+        } else if (object.type === 'WinterSeed') {
+          this.updateObject(row, col, 'WinterSprout');
+        } else if (object.type === 'WinterSprout') {
+          const fruit = Math.random() < 0.3 ? 'Kiwi' : 'Orange';
           this.updateObject(row, col, fruit);
         }
 
