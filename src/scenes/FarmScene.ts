@@ -227,9 +227,9 @@ export class FarmScene {
           }
         } else {
           if (tileType === TileType.Soil) {
-            if (Math.random() < 0.1) {
+            if (Math.random() < 0.04) {
               this.updateObject(row, col, 'Tree');
-            } else if (Math.random() < 0.1) {
+            } else if (Math.random() < 0.04) {
               this.updateObject(row, col, 'Stone');
             }
           }
